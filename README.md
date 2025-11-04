@@ -9,5 +9,6 @@ Added db plan under the db folder. There, you can also see a drawio file, which 
 - Added a new entity: Conversation. It is meant for more convenient and faster load of conversations between two users
 - Edited the fields on current entities to use best practice, like collecting metadata and having atomic fields
 - Passwords should be encrypted and not stored as plain text according to best practices.
+
 **Todos**
 - Ideally, if time allows, we should have some indexes to optimize message lookups
