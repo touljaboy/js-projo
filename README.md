@@ -10,9 +10,11 @@ Added db plan under the db folder. There, you can also see a drawio file, which 
 - Edited the fields on current entities to use best practice, like collecting metadata and having atomic fields
 - Passwords should be encrypted and not stored as plain text according to best practices.
 
-**Todos**
+**Todos (besides stuff on project website on github)**
+- update DB plan!!! Group entity should have a name field d-_-b
 - Write endpoints for CRUD operations for the following stuff: Messages, users, groups, conversations
-- Ideally, if time allows, we should have some indexes to optimize message lookups
+- Ideally, if time allows, we should have some indexes to optimize message lookups, but first create db right
+- **DOCUMENT ALL ENDPOINTS!!!**
 
 ## How to run?
 After you pull the git project on your machine, navigate to the backend folder and enter:
