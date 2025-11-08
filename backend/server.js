@@ -188,7 +188,7 @@ app.patch('/v1/messages/:id', (req, res) => {
   const {message_content} = req.body;
 
   // another way to find id in a list
-  const messageIdx = messages.findIndex(m => m.id == messageId);
+  const messageIdx = messages.findIndex(m => m.message_id == messageId);
 
   if (messageIdx === -1) {
     return res.status(404).json({ error: `Wiadomość o ID ${messageId} nie została znaleziona.` });

@@ -1,0 +1,22 @@
+meta {
+  name: PatchMessageById
+  type: http
+  seq: 3
+}
+
+patch {
+  url: http://localhost:3000/v1/messages/301
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "message_content": "Wypierdalaj, Ewa"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
