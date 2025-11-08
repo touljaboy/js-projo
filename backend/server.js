@@ -1,6 +1,28 @@
 
+// ----------------------
+// !SERVER!
+// ----------------------
+
+const express = require('express');
+const app = express();
+const PORT = 3000;
+
+app.use(express.json());
+
+// Health endpoint
+app.get('/v1/health', (req, res) => {
+  res.send('Saul Goodman 8|');
+});
+
+
+// Run the server
+app.listen(PORT, () => {
+  console.log(`Port ${PORT}`);
+  console.log(`Adress: http://localhost:${PORT}`);
+});
+
 // ------------------------------
-// *O* !USERS! *O*
+// *O* !USERS! *O* - BRZEGORZ
 // ------------------------------
 
 // mock users definitions, until we dont have a proper db ofc
@@ -31,7 +53,7 @@ app.get('/v1/users/:id', (req, res) => {
 // TODO post, delete, update
 
 // ------------------------------
-// ;3 !GROUPS! ;3
+// ;3 !GROUPS! ;3 - CGRZEGORZ
 // ------------------------------
 
 // mock groups
@@ -83,7 +105,7 @@ app.post('/v1/groups', (req, res) => {
 // TODO get, delete, update
 
 // ------------------------------
-// ;3 !CONVERSATION! ;3
+// ;3 !CONVERSATION! ;3 - KACPER
 // ------------------------------
 
 // mock groups
@@ -124,7 +146,7 @@ app.delete('/v1/convs/:id', (req, res) => {
 // TODO get, post, update
 
 // ------------------------------
-// ;3 !MESSAGE! ;3
+// ;3 !MESSAGE! ;3 - CGRZEGORZ
 // ------------------------------
 
 // mock messages
@@ -190,7 +212,7 @@ app.patch('/v1/messages/:id', (req, res) => {
 
 
 // ---------------------
-// USERGROUP
+// USERGROUP - KACPER
 // ---------------------
 
 let userGroups = [
@@ -203,25 +225,3 @@ let userGroups = [
 ];
 
 // TODO get, post, update, delete
-
-// ----------------------
-// !SERVER!
-// ----------------------
-
-const express = require('express');
-const app = express();
-const PORT = 3000;
-
-app.use(express.json());
-
-// Health endpoint
-app.get('/v1/health', (req, res) => {
-  res.send('Saul Goodman 8|');
-});
-
-
-// Run the server
-app.listen(PORT, () => {
-  console.log(`Port ${PORT}`);
-  console.log(`Adress: http://localhost:${PORT}`);
-});
