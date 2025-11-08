@@ -11,7 +11,6 @@ Added db plan under the db folder. There, you can also see a drawio file, which 
 - Passwords should be encrypted and not stored as plain text according to best practices.
 
 **Todos (besides stuff on project website on github)**
-- update DB plan!!! Group entity should have a name field d-_-b
 - Write endpoints for CRUD operations for the following stuff: Messages, users, groups, conversations
 - Ideally, if time allows, we should have some indexes to optimize message lookups, but first create db right
 - **DOCUMENT ALL ENDPOINTS!!!**
