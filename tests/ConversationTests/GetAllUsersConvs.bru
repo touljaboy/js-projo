@@ -1,0 +1,20 @@
+meta {
+  name: GetAllUsersConvs
+  type: http
+  seq: 3
+}
+
+get {
+  url: http://localhost:3000/v1/convs?user_a_id=1
+  body: none
+  auth: inherit
+}
+
+params:query {
+  user_a_id: 1
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
