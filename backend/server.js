@@ -50,7 +50,56 @@ app.get('/v1/users/:id', (req, res) => {
   res.status(200).json(user);
 });
 
-// TODO post, delete, update
+app.post('/v1/users', (req, res) => {
+  const { user, password_hash } = req.body;
+
+  if (!user || !password_hash) {
+    return res.status(400).json({ error: "Brak wymaganych pól: user, password_hash" });
+  }
+
+  nextUserId++;
+
+  const newUser = {
+    id: nextUserId,
+    user,
+    password_hash,
+    created_at: new Date(),
+  };
+
+  users.push(newUser);
+
+  res.status(201).json(newUser);
+});
+
+app.delete('/v1/users/:id', (req, res) => {
+  const userId = parseInt(req.params.id);
+  const index = users.findIndex(u => u.id === userId);
+
+  if (index === -1) {
+    return res.status(404).json({ error: `Użytkownik o ID ${userId} nie został znaleziony.` });
+  }
+
+  const deleted = users.splice(index, 1)[0];
+
+  res.status(200).json({ message: "Użytkownik usunięty.", deleted });
+});
+
+app.patch('/v1/users/:id', (req, res) => {
+  const userId = parseInt(req.params.id);
+  const user = users.find(u => u.id === userId);
+
+  if (!user) {
+    return res.status(404).json({ error: `Użytkownik o ID ${userId} nie został znaleziony.` });
+  }
+
+  const { user: newUserName, password_hash: newPass } = req.body;
+
+  if (newUserName !== undefined) user.user = newUserName;
+  if (newPass !== undefined) user.password_hash = newPass;
+
+  res.status(200).json(user);
+});
+
 
 // ------------------------------
 // ;3 !GROUPS! ;3 - CGRZEGORZ
