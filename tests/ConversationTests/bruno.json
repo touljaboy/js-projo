@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "ConversationTests",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

@@ -10,9 +10,10 @@ Added db plan under the db folder. There, you can also see a drawio file, which 
 - Edited the fields on current entities to use best practice, like collecting metadata and having atomic fields
 - Passwords should be encrypted and not stored as plain text according to best practices.
 
-**Todos**
+**Todos (besides stuff on project website on github)**
 - Write endpoints for CRUD operations for the following stuff: Messages, users, groups, conversations
-- Ideally, if time allows, we should have some indexes to optimize message lookups
+- Ideally, if time allows, we should have some indexes to optimize message lookups, but first create db right
+- **DOCUMENT ALL ENDPOINTS!!!**
 
 ## How to run?
 After you pull the git project on your machine, navigate to the backend folder and enter:
@@ -34,6 +35,16 @@ localhost:3000/v1/health
 ```
 ## Endpoints
 All endpoints should follow this naming convention: /v1/<endpoint>
+
+
+If searching for specific id add '/:id' at the end (e.g /v1/groups/:id)
+
+
+/v1/groups - groups endpoint
+
+/v1/messages - messages endpoint
+
+
 ### GET /v1/health
 checks the server health, returns a string "Saul Goodman 8|"
 ## 'Other stuff' section
