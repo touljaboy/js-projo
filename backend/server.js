@@ -151,7 +151,70 @@ app.post('/v1/groups', (req, res) => {
   res.status(201).json(newGroup);
 });
 
-// TODO get, delete, update
+//Pobieranie wszystkich grup
+app.get('/v1/groups', (req, res) => {
+  res.json(groups);
+});
+
+//Pobieranie grupy po ID
+app.get('/v1/groups/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const group = groups.find(g => g.id === id);
+
+  if (!group) {
+    return res.status(404).json({ error: 'Grupa nie istnieje' });
+  }
+
+  res.json(group);
+});
+//Usuwanie grupy po ID
+app.delete('/v1/groups/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const index = groups.findIndex(g => g.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: 'Grupa nie istnieje' });
+  }
+
+  const deleted = groups.splice(index, 1);
+
+  res.json({ message: 'Grupa usunięta', group: deleted[0] });
+});
+
+
+// Updejtowanie grupy
+app.put('/v1/groups/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const group = groups.find(g => g.id === id);
+
+  if (!group) {
+    return res.status(404).json({ error: 'Grupa nie istnieje' });
+  }
+
+  const { name, is_public, password } = req.body;
+
+  if (!name || is_public === undefined) {
+    return res.status(400).json({ error: 'Brak wymaganych pól: name, is_public' });
+  }
+
+  if (is_public && password) {
+    return res.status(400).json({ error: 'Publiczna grupa nie może mieć hasła' });
+  }
+
+  if (!is_public && !password) {
+    return res.status(400).json({ error: 'Prywatna grupa musi mieć hasło' });
+  }
+
+  // Updating
+  group.name = name;
+  group.is_public = is_public;
+  group.password = password;
+  group.updated_at = new Date();
+
+  res.json(group);
+});
+
+
 
 // ------------------------------
 // ;3 !CONVERSATION! ;3 - KACPER
@@ -423,7 +486,63 @@ app.patch('/v1/messages/:id', (req, res) => {
 
 // There is also app.put() which would receive an entire object (like in post) and it would replace every field
 
-// TODO get, post, delete
+
+// Get all messages
+app.get('/v1/messages', (req, res) => {
+  res.json(messages);
+});
+
+//Get specific message by id
+app.get('/v1/messages/:id', (req, res) => {
+  const messageId = parseInt(req.params.id);
+  const message = messages.find(m => m.message_id === messageId);
+
+  if (!message) {
+    return res.status(404).json({ error: `Wiadomość o ID ${messageId} nie została znaleziona.` });
+  }
+
+  res.json(message);
+});
+
+//Delete message by id
+app.delete('/v1/messages/:id', (req, res) => {
+  const messageId = parseInt(req.params.id);
+  const index = messages.findIndex(m => m.message_id === messageId);
+
+  if (index === -1) {
+    return res.status(404).json({ error: `Wiadomość o ID ${messageId} nie została znaleziona.` });
+  }
+
+  const deleted = messages.splice(index, 1)[0];
+
+  res.json({ 
+    message: 'Wiadomość usunięta', 
+    deleted 
+  });
+});
+
+//Updating message by id
+app.patch('/v1/messages/:id', (req, res) => {
+  const messageId = parseInt(req.params.id);
+  const { message_content } = req.body;
+
+  const messageIdx = messages.findIndex(m => m.message_id === messageId);
+
+  if (messageIdx === -1) {
+    return res.status(404).json({ error: `Wiadomość o ID ${messageId} nie została znaleziona.` });
+  }
+
+  if (!message_content) {
+    return res.status(400).json({ error: 'Brak tresci wiadomosci.' });
+  }
+
+  messages[messageIdx].message_content = message_content;
+  messages[messageIdx].updated_at = new Date();
+
+  res.json(messages[messageIdx]);
+});
+
+
 
 
 
