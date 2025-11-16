@@ -35,6 +35,9 @@ localhost:3000/v1/health
 ```
 ## Endpoints
 All endpoints should follow this naming convention: /v1/<endpoint>
+If searching for specific id add '/:id' at the end (e.g /v1/groups/:id)
+/v1/groups - groups endpoint
+/v1/messages - messages endpoint
 ### GET /v1/health
 checks the server health, returns a string "Saul Goodman 8|"
 ## 'Other stuff' section
