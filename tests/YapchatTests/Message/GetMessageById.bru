@@ -1,0 +1,16 @@
+meta {
+  name: GetMessageById
+  type: http
+  seq: 3
+}
+
+get {
+  url: http://localhost:3000/v1/messages/301
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

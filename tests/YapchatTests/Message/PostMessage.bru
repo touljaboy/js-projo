@@ -1,16 +1,15 @@
 meta {
-  name: GetAllTest
+  name: PostMessage
   type: http
-  seq: 1
+  seq: 5
 }
 
-get {
-  url: http://localhost:3000/v1/users
+post {
+  url: http://localhost:3000/v1/messages
   body: none
   auth: inherit
 }
 
 settings {
   encodeUrl: true
-  timeout: 0
 }
