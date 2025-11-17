@@ -11,7 +11,7 @@ app.use(express.json());
 
 const userGroupsRouter = require('./routes/userGroups.routes');
 app.use('/v1/usergroups', userGroupsRouter);
-const conversationsRouter = required('./routes/conversations.routes')
+const conversationsRouter = require('./routes/conversations.routes')
 app.use('/v1/convs', conversationsRouter);
 
 
