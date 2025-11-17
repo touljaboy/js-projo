@@ -1,0 +1,16 @@
+meta {
+  name: GetGroupById
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:3000/v1/groups/101
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
