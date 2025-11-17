@@ -15,7 +15,8 @@ const conversationsRouter = require('./routes/conversations.routes');
 app.use('/v1/convs', conversationsRouter);
 const usersRouter = require("./routes/users.routes");
 app.use("/v1/users", usersRouter)
-
+const groupsRouter = require("./routes/groups.routes");
+app.use("/v1/groups", groupsRouter)
 
 // Health endpoint
 app.get('/v1/health', (req, res) => {
@@ -28,122 +29,6 @@ app.listen(PORT, () => {
   console.log(`Port ${PORT}`);
   console.log(`Adress: http://localhost:${PORT}`);
 });
-
-// ------------------------------
-// ;3 !GROUPS! ;3 - CGRZEGORZ
-// ------------------------------
-
-// mock groups
-let groups = [
-  {
-    id: 101,
-    name: "kotki",
-    is_public: true,
-    password: null, // public group
-    created_at: new Date('2025-01-15T10:00:00Z')
-  },
-  {
-    id: 102,
-    name: "pieski",
-    is_public: false,
-    password: 'securehash', // private group
-    created_at: new Date('2025-02-20T14:30:00Z')
-  }
-];
-
-let nextGroupId = 103;
-
-app.post('/v1/groups', (req, res) => {
-  const { name, is_public, password } = req.body;
-
-  if (!name || !is_public) {
-    return res.status(400).json({ error: 'Brak wymaganych pól, np nazwy grupy lub informacji czy jest publiczna' });
-  }
-  if (is_public && password) {
-    return res.status(400).json({ error: 'Nie można utworzyć publicznej grupy z haslem' });
-  }
-  else if (!is_public && !password) {
-    return res.status(400).json({ error: 'Brak hasla do prywatnej grupy' });
-  }
-
-  const newGroup = {
-    id: nextGroupId++,
-    name,
-    is_public,
-    password,
-    created_at: new Date()
-  };
-
-  groups.push(newGroup);
-
-  res.status(201).json(newGroup);
-});
-
-//Pobieranie wszystkich grup
-app.get('/v1/groups', (req, res) => {
-  res.json(groups);
-});
-
-//Pobieranie grupy po ID
-app.get('/v1/groups/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  const group = groups.find(g => g.id === id);
-
-  if (!group) {
-    return res.status(404).json({ error: 'Grupa nie istnieje' });
-  }
-
-  res.json(group);
-});
-//Usuwanie grupy po ID
-app.delete('/v1/groups/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  const index = groups.findIndex(g => g.id === id);
-
-  if (index === -1) {
-    return res.status(404).json({ error: 'Grupa nie istnieje' });
-  }
-
-  const deleted = groups.splice(index, 1);
-
-  res.json({ message: 'Grupa usunięta', group: deleted[0] });
-});
-
-
-// Updejtowanie grupy
-app.put('/v1/groups/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  const group = groups.find(g => g.id === id);
-
-  if (!group) {
-    return res.status(404).json({ error: 'Grupa nie istnieje' });
-  }
-
-  const { name, is_public, password } = req.body;
-
-  if (!name || is_public === undefined) {
-    return res.status(400).json({ error: 'Brak wymaganych pól: name, is_public' });
-  }
-
-  if (is_public && password) {
-    return res.status(400).json({ error: 'Publiczna grupa nie może mieć hasła' });
-  }
-
-  if (!is_public && !password) {
-    return res.status(400).json({ error: 'Prywatna grupa musi mieć hasło' });
-  }
-
-  // Updating
-  group.name = name;
-  group.is_public = is_public;
-  group.password = password;
-  group.updated_at = new Date();
-
-  res.json(group);
-});
-
-
-
 
 // ------------------------------
 // ;3 !MESSAGE! ;3 - CGRZEGORZ
