@@ -1,11 +1,11 @@
 meta {
-  name: GetAllTest
+  name: DeleteGroup
   type: http
-  seq: 1
+  seq: 3
 }
 
-get {
-  url: http://localhost:3000/v1/users
+delete {
+  url: http://localhost:3000/v1/groups/101
   body: none
   auth: inherit
 }

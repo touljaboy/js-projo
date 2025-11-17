@@ -1,0 +1,23 @@
+meta {
+  name: PatchUser
+  type: http
+  seq: 5
+}
+
+patch {
+  url: http://localhost:3000/v1/users/2
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "user": "mark",
+    "password_hash": "mockhash1231"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

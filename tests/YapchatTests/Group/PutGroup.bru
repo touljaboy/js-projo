@@ -1,0 +1,24 @@
+meta {
+  name: PutGroup
+  type: http
+  seq: 5
+}
+
+put {
+  url: http://localhost:3000/v1/groups/102
+  body: json
+  auth: inherit
+}
+
+body:json {
+  { 
+    "name": "babcie",
+    "is_public": true,
+    "password": null
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
