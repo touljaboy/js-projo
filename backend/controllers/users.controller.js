@@ -1,0 +1,74 @@
+// -----------------------------
+// USER CONTROLLER
+// -----------------------------
+
+const usersService = require('../services/users.service');
+
+// Generic error handler to standardize responses
+const handleError = (res, error) => {
+    console.error('Controller Error:', error);
+    // Use the status from the service error, or default to 500
+    res.status(error.status || 500).json({ error: error.message || "Wystąpił nieznany błąd serwera." });
+};
+
+// GET /v1/users
+exports.getAll = (req, res) => {
+    try {
+        const allUsers = usersService.getAll();
+        res.status(200).json(allUsers);
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
+// GET /v1/users/:id
+exports.getOne = (req, res) => {
+    const userId = parseInt(req.params.id);
+    try {
+        const user = usersService.getOne(userId);
+        res.status(200).json(user);
+    } catch (error) {
+        handleError(res, error); // Handles 404 from service
+    }
+};
+
+// POST /v1/users
+exports.create = (req, res) => {
+    const { user, password_hash } = req.body;
+    try {
+        // Service handles validation, ID generation, and saving
+        const newUser = usersService.create(user, password_hash);
+        res.status(201).json(newUser); // 201 Created
+    } catch (error) {
+        handleError(res, error); // Handles 400 from service
+    }
+};
+
+// PATCH /v1/users/:id
+exports.patch = (req, res) => {
+    const userId = parseInt(req.params.id);
+    const { user: newUserName, password_hash: newPass } = req.body;
+
+    try {
+        // Only update if at least one field is provided in the body
+        if (newUserName === undefined && newPass === undefined) {
+             return res.status(400).json({ error: "Brak danych do aktualizacji." });
+        }
+        
+        const updatedUser = usersService.update(userId, newUserName, newPass);
+        res.status(200).json(updatedUser);
+    } catch (error) {
+        handleError(res, error); // Handles 404 from service
+    }
+};
+
+// DELETE /v1/users/:id
+exports.delete = (req, res) => {
+    const userId = parseInt(req.params.id);
+    try {
+        const deletedUser = usersService.remove(userId);
+        res.status(200).json({ message: "Użytkownik usunięty.", deleted: deletedUser });
+    } catch (error) {
+        handleError(res, error); // Handles 404 from service
+    }
+};
