@@ -413,7 +413,7 @@ app.patch('/v1/convs/:id', (req, res) => {
 
   if (!last_message_at) {
     return res.status(400).json({
-      error: 'Brak danych do aktualizacji. Przekaż np. last_message_at.'
+      error: 'Brak danych do aktualizacji. Przekaż last_message_at.'
     });
   }
 
@@ -528,23 +528,28 @@ app.delete('/v1/messages/:id', (req, res) => {
   });
 });
 
-//Updating message by id
-app.patch('/v1/messages/:id', (req, res) => {
-  const messageId = parseInt(req.params.id);
-  const { message_content } = req.body;
+//Post message
+app.post('/v1/messages', (req, res) => {
+  const { conversation_id, sender_id, receiver_group_id, message_content } = req.body;
 
-  const messageIdx = messages.findIndex(m => m.message_id === messageId);
-
-  if (messageIdx === -1) {
-    return res.status(404).json({ error: `Wiadomość o ID ${messageId} nie została znaleziona.` });
+  if (!sender_id || !message_content) {
+    return res.status(400).json({ error: "Missing required fields: sender_id and message_content" });
   }
 
-  if (!message_content) {
-    return res.status(400).json({ error: 'Brak tresci wiadomosci.' });
-  }
+  const newMessageId = nextMessageId++;
 
-  messages[messageIdx].message_content = message_content;
-  messages[messageIdx].updated_at = new Date();
+  const newMessage = {
+    message_id: newMessageId,
+    conversation_id: conversation_id || null, // Use null if conversation_id is missing
+    sender_id: sender_id, 
+    receiver_group_id: receiver_group_id || null, // Use null if receiver_group_id is missing
+    message_content: message_content,
+    sent_at: new Date().toISOString(), // Use server time for accurate creation timestamp
+  };
 
-  res.json(messages[messageIdx]);
+  messages.push(newMessage);
+  res.status(200).json({
+    status: 'success',
+    message: 'Messages received successfully!'
+  });
 });
