@@ -1,0 +1,23 @@
+meta {
+  name: PutUserGroup
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:3000/v1/usergroups/1
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "user_id": 1,
+    "group_id": 103
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

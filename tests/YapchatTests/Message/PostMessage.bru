@@ -6,10 +6,19 @@ meta {
 
 post {
   url: http://localhost:3000/v1/messages
-  body: none
+  body: json
   auth: inherit
+}
+
+body:json {
+  {
+    "conversation_id": 202,
+    "sender_id": 1,
+    "message_content": "test"
+  }
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }
