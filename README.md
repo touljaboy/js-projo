@@ -1,5 +1,5 @@
-# js-projo
-Sample description (we dont have a name yet)
+# Yapchat - project for Javascript programming classes
+YapChat is a powerful, yet incredibly easy-to-use communication app designed to keep you closer to the people who matter most.
 ## Figma link - The Whole Team
 [here](https://www.figma.com/design/o9R40oH8H8XGoBdjUeI7Fi/Komunikator-sample-name-project?node-id=0-1&p=f&t=nlronAcqX1bIMXgW-0)
 ## DB Plan - Ernest
