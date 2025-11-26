@@ -448,6 +448,11 @@ Deletes or archives a conversation by ID.
 2. Before first run, execute ``` npm install ```
 3. Then run ``` npm run dev ```
 
+## Routes
+| Path      | Name     | Component        | Description                                      |
+| :-------- | :------- | :--------------- | :----------------------------------------------- |
+| `/`       | `home`   | `HomeView.vue`   | The landing page of the application.             |
+| `/groups` | `groups` | `GroupsView.vue` | The management dashboard for creating/deleting groups. |
 
 # 'Other stuff' section
 ### Project initialization in node.js + express (backend) - Ernest (but I recommend whole team try for yourself in a separate project!)
