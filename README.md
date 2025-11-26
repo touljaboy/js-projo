@@ -447,6 +447,7 @@ Deletes or archives a conversation by ID.
 1. Navigate to the frontend folder.
 2. Before first run, execute ``` npm install ```
 3. Then run ``` npm run dev ```
+4. Access the server via browser at http://localhost:5173/
 
 ## Routes
 | Path      | Name     | Component        | Description                                      |
