@@ -11,9 +11,10 @@ Added db plan under the db folder. There, you can also see a drawio file, which 
 - Passwords should be encrypted and not stored as plain text according to best practices.
 
 **Todos (besides stuff on project website on github)**
-- Write endpoints for CRUD operations for the following stuff: Messages, users, groups, conversations
 - Ideally, if time allows, we should have some indexes to optimize message lookups, but first create db right
-- **DOCUMENT ALL ENDPOINTS!!!**
+
+
+# BACKEND
 
 ## How to run?
 After you pull the git project on your machine, navigate to the backend folder and enter:
@@ -438,6 +439,20 @@ Deletes or archives a conversation by ID.
 | **404 Not Found** | `{ error: "Konwersacja o ID X nie została znaleziona." }` | Conversation with the given ID does not exist. |
 ---
 
+# FRONTEND
+
+## How to run?
+0. First, make sure you've got latest version of node. I recommend using nvm. You can check how to install it in "Other stuff" section.
+
+1. Navigate to the frontend folder.
+2. Before first run, execute ``` npm install ```
+3. Then run ``` npm run dev ```
+
+## Routes
+| Path      | Name     | Component        | Description                                      |
+| :-------- | :------- | :--------------- | :----------------------------------------------- |
+| `/`       | `home`   | `HomeView.vue`   | The landing page of the application.             |
+| `/groups` | `groups` | `GroupsView.vue` | The management dashboard for creating/deleting groups. |
 
 # 'Other stuff' section
 ### Project initialization in node.js + express (backend) - Ernest (but I recommend whole team try for yourself in a separate project!)
@@ -450,3 +465,9 @@ Deletes or archives a conversation by ID.
 5. Initialize npm project ```npm init -y```
 6. Install express ```npm install express```
 7. Install nodemon (smth like a liveserver) ```npm install --save-dev nodemon```
+
+### Frontend initialization using node.js + vue - Ernest
+1. Make sure you've got latest node.js, I'm using nvm. Install nvm
+1. curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+1. nvm install --lts
+1. npm create vue@latest
