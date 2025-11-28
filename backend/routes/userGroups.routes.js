@@ -3,12 +3,26 @@ const router = express.Router();
 
 const userGroupsController = require('../controllers/userGroups.controller');
 
-router.get('/', userGroupsController.getAll);
-router.get('/:id', userGroupsController.getOne);
-router.post('/', userGroupsController.create);
-router.patch('/:id', userGroupsController.update);
-router.delete('/:id', userGroupsController.remove);
-router.put('/:id', userGroupsController.replace);
+const { validationResult } = require('express-validator');
+const {
+  createUserGroupValidation,
+  updateUserGroupValidation,
+  getAllValidation,
+  idParamValidation
+} = require('../validators/userGroupsValidator');
+
+const validate = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  next();
+};
+
+router.get('/', getAllValidation, validate, userGroupsController.getAll);
+router.get('/:id', idParamValidation, validate, userGroupsController.getOne);
+router.post('/', createUserGroupValidation, validate, userGroupsController.create);
+router.patch('/:id', updateUserGroupValidation, validate, userGroupsController.update);
+router.delete('/:id', idParamValidation, validate, userGroupsController.remove);
+router.put('/:id', createUserGroupValidation, validate, userGroupsController.replace);
 
 
 module.exports = router;
