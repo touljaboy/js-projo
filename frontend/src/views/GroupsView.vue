@@ -1,56 +1,86 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
-// Adding comments for others to understand the code well, as not everyone has experience with vue
-// @ - means the src folder
-import defaultImage from '@/assets/sample-group-photo.jpg'
+const API_URL = 'http://localhost:3000/v1/groups'
 
-// ref means that vue will follow changes of a certain element and update it before our eyes!
+const groups = ref([])
 
-// group list with one from the start
-const groups = ref([
-    {
-        id: 1,
-        name: 'JS-Projo',
-        isPublic: true,
-        image: defaultImage
-    }
-])
-
-// Here we enter group name etc
 const newGroupName = ref('')
 const newGroupIsPublic = ref(false)
-// current group id
-let currentId = 1
 
-// Adding new group
-const addGroup = () => {
-    if (newGroupName.value.trim() === '') return // cannot add blank group name
+const getImageUrl = (name) => {
+  return `https://picsum.photos/seed/${name}/200/150`
+}
 
-    groups.value.push({
-    id: ++currentId,
+const fetchGroups = async () => {
+  try {
+    const response = await fetch(API_URL)
+    const data = await response.json()
+    
+    groups.value = data.map(group => ({
+      ...group,
+      isPublic: group.is_public, 
+      image: getImageUrl(group.name) 
+    }))
+  } catch (error) {
+    console.error("Błąd pobierania grup:", error)
+  }
+}
+
+const addGroup = async () => {
+  if (newGroupName.value.trim() === '') return
+
+  const payload = {
     name: newGroupName.value,
-    isPublic: newGroupIsPublic.value,
-    // random picture from the internet
-    image: `https://picsum.photos/seed/${newGroupName.value}/200/150`
+    isPublic: newGroupIsPublic.value
+  }
+
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     })
 
-    console.log(currentId)
-    // clean the form after adding
-    newGroupName.value = ''
-    newGroupIsPublic.value = false
+    if (response.ok) {
+      const savedGroup = await response.json()
+      
+      groups.value.push({
+        ...savedGroup,
+        isPublic: savedGroup.is_public,
+        image: getImageUrl(savedGroup.name)
+      })
+
+      newGroupName.value = ''
+      newGroupIsPublic.value = false
+    }
+  } catch (error) {
+    console.error("Błąd dodawania grupy:", error)
+  }
 }
 
-// delete group
-const removeGroup = (id) => {
-    // retain groups with id other than the one that is deleted
-    groups.value = groups.value.filter(group => group.id !== id)
+const removeGroup = async (id) => {
+  try {
+    const response = await fetch(`${API_URL}/${id}`, {
+      method: 'DELETE'
+    })
+
+    if (response.ok) {
+      groups.value = groups.value.filter(group => group.id !== id)
+    }
+  } catch (error) {
+    console.error("Błąd usuwania grupy:", error)
+  }
 }
+
+onMounted(() => {
+  fetchGroups()
+})
 </script>
 
 <template>
     <div class="container">
-        <h1>Grupy</h1>
+        <h1>Grupy (API)</h1>
 
         <div class="add-form">
             <input 
@@ -69,7 +99,7 @@ const removeGroup = (id) => {
         </div>
 
         <div class="groups-list">
-            <p v-if="groups.length === 0">Brak grup.</p>
+            <p v-if="groups.length === 0">Ładowanie lub brak grup...</p>
 
             <div v-for="group in groups" :key="group.id" class="card">
                 <img :src="group.image" alt="Obrazek grupy" />
@@ -81,6 +111,7 @@ const removeGroup = (id) => {
                     <span v-if="group.isPublic">🔓 Publiczna</span>
                     <span v-else>🔒 Prywatna</span>
                     </p>
+                    <small style="color: grey;">ID: {{ group.id }}</small>
 
                     <button class="delete-btn" @click="removeGroup(group.id)">Usuń</button>
                 </div>
@@ -99,6 +130,6 @@ const removeGroup = (id) => {
 .groups-list { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 .card { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
 .card img { width: 100%; height: 150px; object-fit: cover; }
-.card-content { padding: 10px; }
+.card-content { padding: 10px; display: flex; flex-direction: column;}
 .delete-btn { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-top: 10px;}
 </style>

@@ -1,21 +1,16 @@
 <script setup>
 import { ref, onMounted } from "vue";
 
-// jeśli nie używasz axiosa, to możesz go wywalić i zostać przy fetch
-// import axios from "axios";
 
 // Bazowy URL do API
 const API_URL = "http://localhost:3000/v1/users"; 
-// ^ zmień port/prefix jeśli masz inaczej
 
-// stan listy usersów
 const users = ref([]);
 
-// formularz dodawania
 const newUserName = ref("");
 const newUserPass = ref("");
 
-// ładowanie usersów z backendu
+
 const loadUsers = async () => {
   try {
     const res = await fetch(API_URL);
@@ -27,7 +22,7 @@ const loadUsers = async () => {
   }
 };
 
-// dodawanie usera
+
 const addUser = async () => {
   if (newUserName.value.trim() === "" || newUserPass.value.trim() === "") return;
 
@@ -38,17 +33,14 @@ const addUser = async () => {
       body: JSON.stringify({
         user: newUserName.value,
         password_hash: newUserPass.value, 
-        // tu przekazujesz hash (mockowo tekst)
       }),
     });
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Błąd dodawania użytkownika.");
 
-    // dopisz nowego usera do listy bez przeładowywania
     users.value.push(data);
 
-    // czyścimy formularz
     newUserName.value = "";
     newUserPass.value = "";
   } catch (err) {
@@ -57,7 +49,6 @@ const addUser = async () => {
   }
 };
 
-// usuwanie usera
 const removeUser = async (id) => {
   try {
     const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });

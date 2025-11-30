@@ -18,7 +18,7 @@ let messages = [
         conversation_id: null,
         sender_id: 2, // FK 
         receiver_group_id: 101, // FK do Group
-        message_content: 'Witajcie wszyscy w grupie publicznej!',
+        message_content: 'Witajcie w grupie publicznej!',
         sent_at: new Date('2025-05-10T08:05:00Z').toISOString()
     },
     // another 1 on 1

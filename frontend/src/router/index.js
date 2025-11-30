@@ -1,9 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import GroupsView from '../views/GroupsView.vue'
-import UsersView from '../views/UsersView.vue'  // ✅ dodaj to
+import UsersView from '../views/UsersView.vue'  
 import UserGroupsView from "../views/UserGroupsView.vue";
-
+import MessagesView from '../views/MessagesView.vue'
+import ConversationsView from '../views/ConversationsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -19,7 +20,7 @@ const router = createRouter({
       component: GroupsView
     },
     {
-      path: '/users',          // ✅ nowa ścieżka
+      path: '/users',          
       name: 'users',
       component: UsersView
     },
@@ -27,6 +28,16 @@ const router = createRouter({
       path: "/usergroups",
       name: "usergroups",
       component: UserGroupsView
+    },
+    { 
+      path: '/messages',
+      name: 'messages',
+      component: MessagesView 
+    },
+    { 
+      path: '/conversations',
+      name: 'conversations',
+      component: ConversationsView 
     }
 
   ]

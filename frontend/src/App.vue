@@ -9,7 +9,8 @@ import { RouterLink, RouterView } from 'vue-router'
       <RouterLink to="/groups">Grupy</RouterLink>
       <RouterLink to="/users">Użytkownicy</RouterLink>    
       <RouterLink to="/usergroups">Grupy użytkowników</RouterLink>
-
+      <RouterLink to="/conversations">Rozmowy</RouterLink>
+      <RouterLink to="/messages">Wiadomości</RouterLink>
     </nav>
   </header>
 
