@@ -10,32 +10,32 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
+      path: '/admin',
       name: 'home',
       component: HomeView
     },
     {
-      path: '/groups',
+      path: '/admin/groups',
       name: 'groups',
       component: GroupsView
     },
     {
-      path: '/users',          
+      path: '/admin/users',          
       name: 'users',
       component: UsersView
     },
     {
-      path: "/usergroups",
+      path: "/admin/usergroups",
       name: "usergroups",
       component: UserGroupsView
     },
     { 
-      path: '/messages',
+      path: '/admin/messages',
       name: 'messages',
       component: MessagesView 
     },
     { 
-      path: '/conversations',
+      path: '/admin/conversations',
       name: 'conversations',
       component: ConversationsView 
     }
