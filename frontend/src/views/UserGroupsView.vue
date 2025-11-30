@@ -3,45 +3,103 @@ import { ref, onMounted } from "vue";
 
 const API_URL = "http://localhost:3000/v1/usergroups";
 
-// lista relacji
 const userGroups = ref([]);
-
-// filtry (query params)
 const filterUserId = ref("");
 const filterGroupId = ref("");
 
-// pobieranie relacji (z filtrami)
+const formUserId = ref("");
+const formGroupId = ref("");
+const editingId = ref(null);
+
 const loadUserGroups = async () => {
   try {
     const params = new URLSearchParams();
+    const uId = String(filterUserId.value ?? "").trim();
+    const gId = String(filterGroupId.value ?? "").trim();
 
-const userIdStr = String(filterUserId.value ?? "").trim();
-const groupIdStr = String(filterGroupId.value ?? "").trim();
+    if (uId) params.append("user_id", uId);
+    if (gId) params.append("group_id", gId);
 
-if (userIdStr !== "") params.append("user_id", userIdStr);
-if (groupIdStr !== "") params.append("group_id", groupIdStr);
-
-    const url = params.toString()
-      ? `${API_URL}?${params.toString()}`
-      : API_URL;
-
+    const url = params.toString() ? `${API_URL}?${params.toString()}` : API_URL;
     const res = await fetch(url);
-    if (!res.ok) throw new Error("Nie udało się pobrać relacji user-groups.");
-
+    
+    if (!res.ok) throw new Error("Błąd pobierania");
     userGroups.value = await res.json();
   } catch (err) {
-    console.error(err);
     alert(err.message);
   }
 };
 
-// helper do ładnego formatu daty
-const formatDate = (d) => {
+const createRel = async () => {
+  if (!formUserId.value || !formGroupId.value) return;
+
   try {
-    return new Date(d).toLocaleString();
-  } catch {
-    return d;
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: Number(formUserId.value),
+        group_id: Number(formGroupId.value),
+      }),
+    });
+
+    if (!res.ok) throw new Error("Błąd dodawania");
+    await loadUserGroups();
+    resetForm();
+  } catch (err) {
+    alert(err.message);
   }
+};
+
+const updateRel = async () => {
+  if (!editingId.value) return;
+
+  try {
+    const res = await fetch(`${API_URL}/${editingId.value}`, {
+      method: "PUT", 
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: Number(formUserId.value),
+        group_id: Number(formGroupId.value),
+      }),
+    });
+
+    if (!res.ok) throw new Error("Błąd aktualizacji");
+    await loadUserGroups();
+    resetForm();
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+const deleteRel = async (id) => {
+  if (!confirm("Usunąć?")) return;
+
+  try {
+    const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Błąd usuwania");
+    
+    await loadUserGroups();
+    if (editingId.value === id) resetForm();
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+const startEdit = (rel) => {
+  editingId.value = rel.id;
+  formUserId.value = rel.user_id;
+  formGroupId.value = rel.group_id;
+};
+
+const resetForm = () => {
+  editingId.value = null;
+  formUserId.value = "";
+  formGroupId.value = "";
+};
+
+const formatDate = (d) => {
+  try { return new Date(d).toLocaleString(); } catch { return d; }
 };
 
 onMounted(loadUserGroups);
@@ -49,53 +107,43 @@ onMounted(loadUserGroups);
 
 <template>
   <div class="container">
-    <h1>Grupy uzytkownikow</h1>
+    <h1>UserGroups</h1>
 
-    <!-- Filtry -->
-    <div class="filters">
-      <input
-        v-model="filterUserId"
-        type="number"
-        placeholder="Filtruj po id uzytkownika"
-        @keyup.enter="loadUserGroups"
-      />
-
-      <input
-        v-model="filterGroupId"
-        type="number"
-        placeholder="Filtruj po id grupy"
-        @keyup.enter="loadUserGroups"
-      />
-
-      <button @click="loadUserGroups">Filtruj</button>
-      <button class="secondary" @click="filterUserId=''; filterGroupId=''; loadUserGroups()">
-        Wyczyść
-      </button>
+    <div class="panel filters">
+      <h3>Filtrowanie</h3>
+      <div class="inputs">
+        <input v-model="filterUserId" type="number" placeholder="ID Usera" />
+        <input v-model="filterGroupId" type="number" placeholder="ID Grupy" />
+        <button @click="loadUserGroups">Szukaj</button>
+        <button class="secondary" @click="filterUserId=''; filterGroupId=''; loadUserGroups()">Reset</button>
+      </div>
     </div>
 
-    <!-- Lista -->
+    <div class="panel form" :class="{ editing: editingId }">
+      <h3>{{ editingId ? 'Edycja relacji #' + editingId : 'Nowa relacja' }}</h3>
+      <div class="inputs">
+        <input v-model="formUserId" type="number" placeholder="Podaj ID Usera" />
+        <input v-model="formGroupId" type="number" placeholder="Podaj ID Grupy" />
+        
+        <button v-if="!editingId" @click="createRel" class="primary">Dodaj</button>
+        <div v-else>
+          <button @click="updateRel" class="warning">Zapisz</button>
+          <button @click="resetForm" class="secondary">Anuluj</button>
+        </div>
+      </div>
+    </div>
+
     <div class="list">
-      <p v-if="userGroups.length === 0">Brak relacji do wyświetlenia.</p>
-
       <div v-for="rel in userGroups" :key="rel.id" class="card">
-        <div class="row">
-          <span class="label">ID relacji:</span>
-          <span>{{ rel.id }}</span>
+        <div class="info">
+          <div><strong>ID:</strong> {{ rel.id }}</div>
+          <div><strong>User:</strong> {{ rel.user_id }}</div>
+          <div><strong>Group:</strong> {{ rel.group_id }}</div>
+          <div class="date">{{ formatDate(rel.joined_at) }}</div>
         </div>
-
-        <div class="row">
-          <span class="label">user_id:</span>
-          <span>{{ rel.user_id }}</span>
-        </div>
-
-        <div class="row">
-          <span class="label">group_id:</span>
-          <span>{{ rel.group_id }}</span>
-        </div>
-
-        <div class="row muted">
-          <span class="label">joined_at:</span>
-          <span>{{ formatDate(rel.joined_at) }}</span>
+        <div class="actions">
+          <button @click="startEdit(rel)" class="edit-btn">Edytuj</button>
+          <button @click="deleteRel(rel.id)" class="delete-btn">Usuń</button>
         </div>
       </div>
     </div>
@@ -103,71 +151,20 @@ onMounted(loadUserGroups);
 </template>
 
 <style scoped>
-.container {
-  max-width: 700px;
-  margin: 0 auto;
-  font-family: sans-serif;
-}
+.container { max-width: 800px; margin: 0 auto; font-family: sans-serif; }
+.panel { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee; }
+.form.editing { border-color: #ffa500; background: #fff8e1; }
+.inputs { display: flex; gap: 10px; flex-wrap: wrap; }
+input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; }
 
-.filters {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  padding: 16px;
-  background: #f0f0f0;
-  border-radius: 8px;
-  align-items: center;
-}
+button { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; color: white; background: #42b883; }
+button.secondary { background: #777; }
+button.warning { background: #ffa500; color: black; }
+button.edit-btn { background: #3498db; margin-right: 5px; }
+button.delete-btn { background: #e74c3c; }
 
-.filters input {
-  padding: 8px;
-  flex: 1;
-  min-width: 120px;
-}
-
-.filters button {
-  padding: 8px 14px;
-  background: #42b883;
-  color: white;
-  border: none;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.filters button.secondary {
-  background: #999;
-}
-
-.filters button:hover {
-  filter: brightness(0.95);
-}
-
-.list {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: white;
-  padding: 12px;
-}
-
-.row {
-  display: flex;
-  justify-content: space-between;
-  padding: 4px 0;
-}
-
-.label {
-  font-weight: 600;
-}
-
-.muted {
-  color: #666;
-  font-size: 13px;
-  
-}
+.list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.card { border: 1px solid #ddd; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; background: white; }
+.date { font-size: 0.85em; color: #666; margin-top: 5px; }
+.actions { display: flex; }
 </style>

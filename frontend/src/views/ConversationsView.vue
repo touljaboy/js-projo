@@ -6,6 +6,9 @@ const API_URL = "http://localhost:3000/v1/convs";
 
 const conversations = ref([]);
 
+// logikę ładowania wyodrębnić poza widoki (composable, na ostatnim wykładzie), a tu sam view i obsługa
+// pomyśleć czy rozbić na komponenty (nadanie struktury), np komponent nagłówka i wtedy łatwiej modularnie dodawać
+// README zaaktualizować
 
 const userA = ref("");
 const userB = ref("");
