@@ -74,7 +74,7 @@ const removeUser = async (id) => {
     <PageHeader
       title="Użytkownicy"
       v-model="search"
-      searchPlaceholder="Szukaj użytkownika..."
+      searchPlaceholder="Wyszukaj..."
       :loading="isLoading"
     />
 

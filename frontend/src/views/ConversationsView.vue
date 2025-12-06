@@ -1,10 +1,13 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
+import PageHeader from "@/components/common/PageHeader/PageHeader.vue";
+
 
 // URL do API Conversations
 const API_URL = "http://localhost:3000/v1/convs"; 
 
 const conversations = ref([]);
+const search = ref("");
 
 // logikę ładowania wyodrębnić poza widoki (composable, na ostatnim wykładzie), a tu sam view i obsługa
 // pomyśleć czy rozbić na komponenty (nadanie struktury), np komponent nagłówka i wtedy łatwiej modularnie dodawać
@@ -25,6 +28,18 @@ const loadConversations = async () => {
   }
 };
 
+const filteredConversations = computed(() => {
+  const q = search.value.trim().toLowerCase();
+  if (!q) return conversations.value;
+
+  return conversations.value.filter((c) => {
+    const id = String(c.id ?? "").toLowerCase();
+    const a = String(c.user_a_id ?? "").toLowerCase();
+    const b = String(c.user_b_id ?? "").toLowerCase();
+
+    return id.includes(q) || a.includes(q) || b.includes(q);
+  });
+});
 
 const addConversation = async () => {
   if (!userA.value || !userB.value) return;
@@ -74,8 +89,11 @@ onMounted(loadConversations);
 
 <template>
   <div class="container">
-    <h1>Konwersacje</h1>
-
+    <PageHeader
+      title="Konwersacje"
+      v-model="search"
+      searchPlaceholder="Wyszukaj..."
+    />
     <div class="add-form">
       <input
         v-model="userA"
@@ -91,9 +109,11 @@ onMounted(loadConversations);
     </div>
 
     <div class="list-grid">
-      <p v-if="conversations.length === 0">Brak konwersacji.</p>
+      <p v-if="filteredConversations.length === 0" class="muted">
+        Brak konwersacji do wyświetlenia.
+      </p>
 
-      <div v-for="c in conversations" :key="c.id" class="card">
+      <div v-for="c in filteredConversations" :key="c.id" class="card">
         <div class="card-content">
           <h3>Chat #{{ c.id }}</h3>
           <p class="muted">

@@ -1,9 +1,13 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import PageHeader from '@/components/common/PageHeader/PageHeader.vue'
+
 
 const API_URL = 'http://localhost:3000/v1/groups'
 
 const groups = ref([])
+
+const search = ref('')
 
 const newGroupName = ref('')
 const newGroupIsPublic = ref(false)
@@ -26,6 +30,18 @@ const fetchGroups = async () => {
     console.error("Błąd pobierania grup:", error)
   }
 }
+
+const filteredGroups = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  if (!q) return groups.value
+
+  return groups.value.filter(g => {
+    const name = String(g.name ?? '').toLowerCase()
+    const id = String(g.id ?? '').toLowerCase()
+    return name.includes(q) || id.includes(q)
+  })
+})
+
 
 const addGroup = async () => {
   if (newGroupName.value.trim() === '') return
@@ -80,7 +96,11 @@ onMounted(() => {
 
 <template>
     <div class="container">
-        <h1>Grupy (API)</h1>
+        <PageHeader
+          title="Grupy"
+          v-model="search"
+          searchPlaceholder="Wyszukaj..."
+        />
 
         <div class="add-form">
             <input 
@@ -99,9 +119,10 @@ onMounted(() => {
         </div>
 
         <div class="groups-list">
-            <p v-if="groups.length === 0">Ładowanie lub brak grup...</p>
-
-            <div v-for="group in groups" :key="group.id" class="card">
+            <p v-if="filteredGroups.length === 0" class="muted">
+              Ładowanie lub brak grup...
+            </p>
+            <div v-for="group in filteredGroups" :key="group.id" class="card">
                 <img :src="group.image" alt="Obrazek grupy" />
 
                 <div class="card-content">

@@ -1,10 +1,30 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed  } from "vue";
+import PageHeader from "@/components/common/PageHeader/PageHeader.vue";
+
 
 const API_URL = "http://localhost:3000/v1/messages"; 
 
 const messages = ref([]);
 
+const search = ref("");
+
+const filteredMessages = computed(() => {
+  const q = search.value.trim().toLowerCase();
+  if (!q) return messages.value;
+
+  return messages.value.filter((m) => {
+    const sender = String(m.sender_id ?? "").toLowerCase();
+    const conv = String(m.conversation_id ?? "").toLowerCase();
+    const content = String(m.message_content ?? "").toLowerCase();
+
+    return (
+      sender.includes(q) ||
+      conv.includes(q) ||
+      content.includes(q)
+    );
+  });
+});
 
 const conversationId = ref("");
 const senderId = ref("");
@@ -74,7 +94,11 @@ onMounted(loadMessages);
 
 <template>
   <div class="container">
-    <h1>Wiadomości</h1>
+    <PageHeader
+      title="Wiadomości"
+      v-model="search"
+      searchPlaceholder="Wyszukaj..."
+    />
 
     <div class="add-form">
       <div class="inputs-row">
@@ -92,9 +116,10 @@ onMounted(loadMessages);
     </div>
 
     <div class="messages-list">
-      <p v-if="messages.length === 0">Skrzynka pusta.</p>
-
-      <div v-for="m in messages" :key="m.message_id" class="msg-card">
+      <p v-if="filteredMessages.length === 0" class="muted">
+        Brak wiadomości do wyświetlenia.
+      </p>
+      <div v-for="m in filteredMessages" :key="m.message_id" class="msg-card">
         <div class="msg-header">
             <span class="sender">User ID: {{ m.sender_id }}</span>
             <span class="meta">Conv ID: {{ m.conversation_id }} | {{ new Date(m.sent_at).toLocaleString() }}</span>
