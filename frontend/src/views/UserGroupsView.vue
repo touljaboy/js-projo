@@ -115,7 +115,7 @@ onMounted(loadUserGroups)
 <template>
   <div class="container">
     <PageHeader
-      title="UserGroups"
+      title="Grupy użytkowników"
       v-model="search"
       searchPlaceholder="Wyszukaj..."
     />

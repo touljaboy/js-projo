@@ -90,7 +90,7 @@ onMounted(loadConversations);
 <template>
   <div class="container">
     <PageHeader
-      title="Konwersacje"
+      title="Rozmowy"
       v-model="search"
       searchPlaceholder="Wyszukaj..."
     />
