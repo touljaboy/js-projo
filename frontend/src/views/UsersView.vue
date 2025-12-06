@@ -1,27 +1,34 @@
 <script setup>
-import { ref, onMounted } from "vue";
-
+import { ref } from 'vue'
+import PageHeader from '@/components/common/PageHeader/PageHeader.vue'
+import { useRemoteSearch } from '@/composables/useRemoteSearch'
 
 // Bazowy URL do API
-const API_URL = "http://localhost:3000/v1/users"; 
+const API_URL = 'http://localhost:3000/v1/users'
 
-const users = ref([]);
+const fetchUsersApi = async (q, signal) => {
+  const res = await fetch(API_URL, { signal })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || 'Błąd pobierania użytkowników.')
 
-const newUserName = ref("");
-const newUserPass = ref("");
+  const query = q.trim().toLowerCase()
+  if (!query) return data
 
+  return data.filter((u) => (u.user ?? '').toLowerCase().includes(query))
+}
 
-const loadUsers = async () => {
-  try {
-    const res = await fetch(API_URL);
-    if (!res.ok) throw new Error("Nie udało się pobrać usersów.");
-    users.value = await res.json();
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
-  }
-};
+const {
+  query: search,
+  results: users,
+  isLoading,
+  error,
+  runSearch,
+} = useRemoteSearch(fetchUsersApi, {
+  debounceMs: 300,
+  immediate: true,
+})
 
+const newUserPass = ref('')
 
 const addUser = async () => {
   if (newUserName.value.trim() === "" || newUserPass.value.trim() === "") return;
@@ -32,42 +39,44 @@ const addUser = async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         user: newUserName.value,
-        password_hash: newUserPass.value, 
+        password_hash: newUserPass.value,
       }),
     });
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Błąd dodawania użytkownika.");
 
-    users.value.push(data);
+    newUserName.value = ''
+    newUserPass.value = ''
 
-    newUserName.value = "";
-    newUserPass.value = "";
   } catch (err) {
-    console.error(err);
-    alert(err.message);
+    console.error(err)
+    alert(err.message)
   }
-};
+}
 
 const removeUser = async (id) => {
   try {
-    const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Błąd usuwania użytkownika.");
+    const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Błąd usuwania użytkownika.')
 
-    users.value = users.value.filter((u) => u.id !== id);
+    await runSearch(search.value)
   } catch (err) {
-    console.error(err);
-    alert(err.message);
+    console.error(err)
+    alert(err.message)
   }
-};
-
-onMounted(loadUsers);
+}
 </script>
 
 <template>
   <div class="container">
-    <h1>Użytkownicy</h1>
+    <PageHeader
+      title="Użytkownicy"
+      v-model="search"
+      searchPlaceholder="Szukaj użytkownika..."
+      :loading="isLoading"
+    />
 
     <div class="add-form">
       <input
@@ -88,7 +97,8 @@ onMounted(loadUsers);
     </div>
 
     <div class="users-list">
-      <p v-if="users.length === 0">Brak użytkowników.</p>
+      <p v-if="error" class="error">{{ error }}</p>
+      <p v-else-if="!isLoading && users.length === 0">Brak użytkowników.</p>
 
       <div v-for="u in users" :key="u.id" class="card">
         <div class="card-content">
@@ -98,9 +108,7 @@ onMounted(loadUsers);
 
           <p class="hash">hash: {{ u.password_hash }}</p>
 
-          <button class="delete-btn" @click="removeUser(u.id)">
-            Usuń
-          </button>
+          <button class="delete-btn" @click="removeUser(u.id)">Usuń</button>
         </div>
       </div>
     </div>
@@ -181,5 +189,11 @@ onMounted(loadUsers);
   border-radius: 4px;
   cursor: pointer;
   margin-top: 10px;
+}
+
+.error {
+  color: #c00;
+  margin: 8px 0;
+  grid-column: 1 / -1;
 }
 </style>
