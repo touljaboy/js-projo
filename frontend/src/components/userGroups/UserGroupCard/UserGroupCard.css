@@ -1,0 +1,17 @@
+.card--rel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.card--rel .date {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 5px;
+}
+
+.card--rel .actions {
+    display: flex;
+    gap: 6px;
+}

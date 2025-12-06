@@ -1,52 +1,18 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
+import { computed } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
+import AdminHeader from '@/components/admin/AdminHeader/AdminHeader.vue'
+import ClientHeader from "@/components/client/ClientHeader/ClientHeader.vue";
+
+
+const route = useRoute()
+const isAdminRoute = computed(() => route.path.startsWith('/admin'))
 </script>
 
 <template>
-  <header>
-    <nav>
-      <RouterLink to="/admin">Strona Główna</RouterLink>
-      <RouterLink to="/admin/groups">Grupy</RouterLink>
-      <RouterLink to="/admin/users">Użytkownicy</RouterLink>    
-      <RouterLink to="/admin/usergroups">Grupy użytkowników</RouterLink>
-      <RouterLink to="/admin/conversations">Rozmowy</RouterLink>
-      <RouterLink to="/admin/messages">Wiadomości</RouterLink>
-    </nav>
-  </header>
-
+  <AdminHeader v-if="isAdminRoute" />
+  <ClientHeader v-else />
   <main>
     <RouterView />
   </main>
 </template>
-
-<style scoped>
-/* Prosty styl dla nawigacji */
-header {
-  background-color: #333;
-  padding: 1rem;
-  margin-bottom: 2rem;
-}
-
-nav {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-}
-
-nav a {
-  color: white;
-  text-decoration: none;
-  font-size: 1.2rem;
-}
-
-nav a:hover {
-  text-decoration: underline;
-  color: #42b883;
-}
-
-/* Styl dla aktywnego linku (Vue dodaje tę klasę automatycznie) */
-nav a.router-link-active {
-  color: #42b883;
-  font-weight: bold;
-}
-</style>
