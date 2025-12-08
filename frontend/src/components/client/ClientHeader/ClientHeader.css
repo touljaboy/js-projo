@@ -1,0 +1,27 @@
+header {
+  background-color: #333;
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+nav {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  font-size: 1.2rem;
+}
+
+nav a:hover {
+  text-decoration: underline;
+  color: #42b883;
+}
+
+nav a.router-link-active {
+  color: #42b883;
+  font-weight: bold;
+}

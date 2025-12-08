@@ -1,0 +1,127 @@
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: sans-serif;
+    padding: 0 12px;
+}
+
+.add-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #f0f0f0;
+    border-radius: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.add-form--column {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.add-form input,
+.add-form textarea {
+  padding: 8px;
+  flex-grow: 1;
+}
+
+.add-form input[type="text"],
+.add-form input[type="number"] {
+    padding: 8px;
+    flex-grow: 1;
+}
+
+button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: white;
+    background: #42b883;
+    /* primary */
+}
+
+button:hover {
+    filter: brightness(0.95);
+}
+
+button.secondary {
+    background: #777;
+}
+
+button.warning {
+    background: #ffa500;
+    color: black;
+}
+
+button.edit-btn {
+    background: #3498db;
+}
+
+button.delete-btn,
+.delete-btn {
+    background: #e74c3c;
+}
+
+.add-form button {
+    padding: 8px 16px;
+    background: #42b883;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.add-form button:hover {
+    background: #33a06f;
+}
+
+.card {
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.card-content {
+    padding: 12px;
+}
+
+.muted {
+    color: #666;
+    font-size: 13px;
+}
+
+.delete-btn {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.error {
+    color: #c00;
+    margin: 8px 0;
+}
+
+.inputs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.date {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 5px;
+}
