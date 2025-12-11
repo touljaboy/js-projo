@@ -5,18 +5,31 @@ import GroupsAddForm from '@/components/groups/GroupsAddForm/GroupsAddForm.vue'
 
 import { useGroups } from '@/composables/useGroups'
 
-const { search, filteredGroups, addGroup, removeGroup } = useGroups()
+const {
+  groups,
+  search,
+  filteredGroups,
+  fetchGroups,
+  addGroup,
+  removeGroup
+} = useGroups()
 </script>
 
 <template>
   <div class="container">
     <PageHeader title="Grupy" v-model="search" searchPlaceholder="Wyszukaj..." />
-    
+
     <GroupsAddForm @submit="addGroup" />
 
     <div class="groups-list">
-    <p v-if="groups.length === 0">Ładowanie lub brak grup...</p>
-      <GroupCard v-for="g in filteredGroups" :key="g.id" :group="g" @delete="removeGroup" />
+      <p v-if="filteredGroups.length === 0">Ładowanie lub brak grup...</p>
+
+      <GroupCard
+        v-for="g in filteredGroups"
+        :key="g.id"
+        :group="g"
+        @delete="removeGroup"
+      />
     </div>
   </div>
 </template>
