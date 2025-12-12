@@ -1,5 +1,10 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+
+const router = useRouter()
+const { register } = useAuth()
 
 const username = ref('')
 const password = ref('')
@@ -8,22 +13,46 @@ const email = ref('')
 const pesel = ref('')
 const isRobot = ref(false)
 const confirmationSent = ref(false)
+const error = ref('')
+const isLoading = ref(false)
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
+  error.value = ''
+  
   if (!isRobot.value) {
-    alert('Proszę potwierdzić, że nie jesteś robotem.')
+    error.value = 'Proszę potwierdzić, że nie jesteś robotem.'
     return
   }
-  // Tutaj logika wysyłania danych do backendu
-  confirmationSent.value = true
+
+  if (password.value !== repeat.value) {
+    error.value = 'Hasła nie są identyczne.'
+    return
+  }
+
+  if (!username.value || !password.value || !email.value) {
+    error.value = 'Proszę wypełnić wszystkie wymagane pola.'
+    return
+  }
+
+  isLoading.value = true
+  const result = await register(username.value, password.value, email.value, pesel.value)
+  isLoading.value = false
+
+  if (result.success) {
+    confirmationSent.value = true
+    setTimeout(() => {
+      router.push('/login')
+    }, 2000)
+  } else {
+    error.value = result.error
+  }
 }
 </script>
 
 <template>
   <div class="signup-container">
     <header class="header">
-      <small>Site name</small>
-      <h1>Hello GUYS - chat application</h1>
+      <h1>Yappchat</h1>
       <p class="description">
         We are glad you’re here to join us! You are not in safe hands as we pay no attention at all to our security. Please, do not use too complex passwords as they take up more space in our database. Use something simple like ‘password1’ to secure your account with us.
       </p>
@@ -60,20 +89,17 @@ const handleSubmit = () => {
         CAPTCHA - I AM A ROBOT
       </label>
 
-      <button type="submit" class="signup-button">Sign up for 1$</button>
+      <p v-if="error" class="error-msg">{{ error }}</p>
+
+      <button type="submit" class="signup-button" :disabled="isLoading">
+        {{ isLoading ? 'Rejestracja...' : 'Sign up for 1$' }}
+      </button>
     </form>
 
     <p v-if="confirmationSent" class="confirmation-msg">
-      An email with confirmation link has been sent to your mailbox.
+      Rejestracja pomyślna! Za chwilę zostaniesz przekierowany do strony logowania.
     </p>
 
-    <footer class="footer">
-      <small>Site name</small>
-      <div class="social-icons">
-        <span>🐦</span> <span>🔗</span> <span>📸</span> <span>🎥</span>
-      </div>
-      <small>Authors, Date</small>
-    </footer>
   </div>
 </template>
 
@@ -85,6 +111,18 @@ const handleSubmit = () => {
   background: white;
   color: black;
   font-family: Arial, sans-serif;
+}
+
+h1 {
+  margin-bottom: 0.5rem;
+  font-size: 3rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+  letter-spacing: 2px;
 }
 
 .header small {

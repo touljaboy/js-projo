@@ -28,6 +28,9 @@ app.use("/v1/groups", groupsRouter);
 const messagesRouter = require("./routes/messages.routes");
 app.use("/v1/messages", messagesRouter);
 
+const authRouter = require("./routes/auth.routes");
+app.use("/v1/auth", authRouter);
+
 // Health endpoint
 app.get('/v1/health', (req, res) => {
   res.send('Saul Goodman 8|');

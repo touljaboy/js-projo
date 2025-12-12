@@ -1,104 +1,63 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { useAuth } from '@/composables/useAuth'
+import { useRouter } from 'vue-router'
 
-const currentUser = ref('user1, user2')
-const searchFriends = ref('')
-const searchAdd = ref('')
+const router = useRouter()
+const { currentUser, logout } = useAuth()
 
-const friendsList = ref([
-  { id: 1, name: 'Carl Johnson', initials: 'CJ' },
-  { id: 2, name: 'Kevin Lux', initials: 'KL' },
-  { id: 3, name: 'Gabriel Barilla', initials: 'GB' },
-  { id: 4, name: 'Ebenezer Frickface', initials: 'EF' },
-  { id: 5, name: 'Kyle Gass', initials: 'KG' },
-  { id: 6, name: 'Michael Jackson', initials: 'MJ' },
-])
-
-// Filtry po lewej i prawej kolumnie
-const filteredFriends = computed(() =>
-  friendsList.value.filter(f =>
-    f.name.toLowerCase().includes(searchFriends.value.toLowerCase())
-  )
-)
-
-const filteredAddable = computed(() =>
-  friendsList.value.filter(f =>
-    f.name.toLowerCase().includes(searchAdd.value.toLowerCase())
-  )
-)
-
-const addFriend = (friend) => {
-  alert(`Dodano kolegę: ${friend.name}`)
-  // Tutaj możesz dodać logikę dodawania do listy znajomych backendowo
+const handleLogout = () => {
+  logout()
 }
 </script>
 
 <template>
   <div class="container">
     <header class="header">
-      <small>{{ currentUser }}</small>
-      <small class="site-name">Site name</small>
+      <div class="user-info">
+        <div class="user-avatar">{{ (currentUser?.user || 'U').charAt(0).toUpperCase() }}</div>
+        <span class="user-name">{{ currentUser?.user || 'Użytkownik' }}</span>
+      </div>
+      <small class="site-name">Yappchat</small>
       <nav>
         <ul>
-          <li><a href="#">Channels</a></li>
-          <li><a href="#">Friends</a></li>
-          <li><a href="#">Settings</a></li>
-          <li><a href="#" class="active">About</a></li>
+          <li><router-link to="/channels">Channels</router-link></li>
+          <li><router-link to="/chat">Friends</router-link></li>
+          <li><router-link to="/about" class="active">About</router-link></li>
+          <li><a href="#" @click.prevent="handleLogout">Logout</a></li>
         </ul>
       </nav>
     </header>
 
-    <h1>Hello GUYS!</h1>
-
-    <div class="friends-wrapper">
-      <div class="friends-list">
-        <input
-          type="search"
-          v-model="searchFriends"
-          placeholder="Wyszukaj kolegę"
-          aria-label="Wyszukaj kolegę"
-        />
-        <ul>
-          <li v-for="friend in filteredFriends" :key="friend.id">
-            <div class="avatar">{{ friend.initials }}</div>
-            <span>{{ friend.name }}</span>
-          </li>
+    <div class="about-content">
+      <h1>Yappchat</h1>
+      
+      <section class="info-section">
+        <h2>Autorzy</h2>
+        <ul class="authors-list">
+          <li>Ernest Fudali</li>
+          <li>Grzegorz Bielski</li>
+          <li>Grzegorz Czarnopys</li>
+          <li>Kacper Lewko</li>
         </ul>
-      </div>
+      </section>
 
-      <div class="friends-add">
-        <input
-          type="search"
-          v-model="searchAdd"
-          placeholder="Dodaj kolegę"
-          aria-label="Dodaj kolegę"
-        />
-        <ul>
-          <li v-for="friend in filteredAddable" :key="friend.id">
-            <button @click="addFriend(friend)" class="add-btn">ADD</button>
-            <span>{{ friend.name }}</span>
-          </li>
-        </ul>
-      </div>
+      <section class="info-section version">
+        <p>2025</p>
+      </section>
     </div>
-
-    <footer class="footer">
-      <small>Site name</small>
-      <div class="social-icons">
-        <span>🐦</span> <span>🔗</span> <span>📸</span> <span>🎥</span>
-      </div>
-      <small>Authors, Date</small>
-    </footer>
   </div>
 </template>
 
 <style scoped>
 .container {
   max-width: 900px;
-  margin: 2rem auto;
+  margin: 0 auto;
   padding: 1rem;
   font-family: Arial, sans-serif;
   color: #000;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
@@ -106,7 +65,37 @@ const addFriend = (friend) => {
   justify-content: space-between;
   align-items: center;
   font-size: 0.85rem;
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex: 1;
+}
+
+.user-avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.user-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
 }
 
 .header small {
@@ -116,6 +105,12 @@ const addFriend = (friend) => {
 .site-name {
   font-weight: bold;
   text-align: center;
+  font-size: 1.8rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 1.5px;
 }
 
 nav ul {
@@ -139,24 +134,83 @@ nav ul li a:hover {
   color: white;
 }
 
+.about-content {
+  flex: 1;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 3rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+}
+
+h2 {
+  color: #333;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #2196F3;
+  padding-bottom: 0.5rem;
+}
+
+.info-section {
   margin-bottom: 2rem;
 }
 
-.friends-wrapper {
+.info-section p {
+  line-height: 1.6;
+  color: #555;
+}
+
+.features-list {
+  list-style: none;
+  padding: 0;
+}
+
+.features-list li {
+  padding: 0.5rem 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.tech-stack {
   display: flex;
-  justify-content: space-between;
   gap: 2rem;
+  margin-top: 1rem;
 }
 
-.friends-list,
-.friends-add {
+.tech-item {
   flex: 1;
+  padding: 1rem;
+  background: #f5f5f5;
+  border-radius: 8px;
 }
 
-.friends-list input,
-.friends-add input {
-  width: 100%;
+.tech-item h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2196F3;
+}
+
+.tech-item p {
+  margin: 0;
+  color: #666;
+}
+
+.version {
+  text-align: center;
+  margin-top: 3rem;
+  color: #999;
   padding: 0.4rem 0.8rem;
   margin-bottom: 1rem;
   font-size: 1rem;

@@ -22,6 +22,7 @@ const validate = (req, res, next) => {
 router.get('/', groupsController.getGroups);
 router.get('/:id', idParamValidation, validate, groupsController.getGroupById);
 router.post('/', createGroupValidation, validate, groupsController.createGroup);
+router.post('/:id/verify', groupsController.verifyGroupPassword);
 router.put('/:id', replaceGroupValidation, validate, groupsController.replaceGroup);
 router.delete('/:id', idParamValidation, validate, groupsController.deleteGroup);
 

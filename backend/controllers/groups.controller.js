@@ -34,10 +34,10 @@ exports.getGroupById = (req, res) => {
 
 // POST /v1/groups
 exports.createGroup = (req, res) => {
-    const { name, is_public, password } = req.body;
+    const { name, is_public, password, creator_id } = req.body;
     try {
         // Service handles validation, ID generation, and saving
-        const newGroup = groupsService.create(name, is_public, password);
+        const newGroup = groupsService.create(name, is_public, password, creator_id);
         res.status(201).json(newGroup); // 201 Created
     } catch (error) {
         handleError(res, error); // Handles 400 from service
@@ -66,5 +66,17 @@ exports.deleteGroup = (req, res) => {
         res.status(200).json({ message: "Grupa usunięta.", deleted: deletedGroup });
     } catch (error) {
         handleError(res, error); // Handles 404 from service
+    }
+};
+
+// POST /v1/groups/:id/verify - Verify group password
+exports.verifyGroupPassword = (req, res) => {
+    const id = parseInt(req.params.id);
+    const { password } = req.body;
+    try {
+        const result = groupsService.verifyPassword(id, password);
+        res.status(200).json(result);
+    } catch (error) {
+        handleError(res, error);
     }
 };

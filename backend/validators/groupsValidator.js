@@ -9,7 +9,7 @@ const createGroupValidation = [
     .isBoolean()
     .withMessage('is_public musi być wartością boolean'),
   body('password')
-    .optional()
+    .optional({ nullable: true })
     .isString()
     .withMessage('Hasło musi być tekstem')
 ];
@@ -26,7 +26,7 @@ const replaceGroupValidation = [
     .isBoolean()
     .withMessage('is_public musi być wartością boolean'),
   body('password')
-    .optional()
+    .optional({ nullable: true })
     .isString()
     .withMessage('Hasło musi być tekstem')
 ];

@@ -8,6 +8,7 @@ let groups = [
         name: "kotki",
         is_public: true,
         password: null, // public group
+        creator_id: 1,
         created_at: new Date('2025-01-15T10:00:00Z').toISOString()
     },
     {
@@ -15,6 +16,7 @@ let groups = [
         name: "pieski",
         is_public: false,
         password: 'securehash', // private group
+        creator_id: 1,
         created_at: new Date('2025-02-20T14:30:00Z').toISOString()
     }
 ];
@@ -48,7 +50,7 @@ exports.getOne = (id) => {
 // -----------------------------------------
 // CREATE GROUP
 // -----------------------------------------
-exports.create = (name, is_public, password) => {
+exports.create = (name, is_public, password, creator_id) => {
     
     // 1. Core Validation
     if (!name || is_public === undefined) {
@@ -68,6 +70,7 @@ exports.create = (name, is_public, password) => {
         name,
         is_public,
         password: is_public ? null : password,
+        creator_id: creator_id || null,
         created_at: new Date().toISOString()
     };
 
@@ -137,4 +140,31 @@ exports.remove = (id) => {
     // Return safe version (without password)
     const { password: _, ...safeGroup } = deleted;
     return safeGroup;
+};
+
+// -----------------------------------------
+// VERIFY GROUP PASSWORD
+// -----------------------------------------
+exports.verifyPassword = (id, password) => {
+    const group = groups.find(g => g.id === id);
+
+    if (!group) {
+        throw { status: 404, message: 'Grupa nie istnieje' };
+    }
+
+    if (group.is_public) {
+        return { valid: true, message: 'Grupa jest publiczna' };
+    }
+
+    if (!password) {
+        throw { status: 400, message: 'Brak hasła' };
+    }
+
+    const isValid = group.password === password;
+    
+    if (!isValid) {
+        throw { status: 401, message: 'Nieprawidłowe hasło' };
+    }
+
+    return { valid: true, message: 'Hasło prawidłowe' };
 };

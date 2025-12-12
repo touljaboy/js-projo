@@ -16,6 +16,47 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/',
+      redirect: '/login'
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginView,
+      meta: { requiresGuest: true }
+    },
+    {
+      path: '/signup',
+      name: 'signup',
+      component: SignUpView,
+      meta: { requiresGuest: true }
+    },
+    {
+      path: '/channels',
+      name: 'channels',
+      component: ChannelsView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/chat',
+      name: 'chat',
+      component: ChatView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/friends',
+      name: 'friends',
+      component: FriendsView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/about',
+      name: 'about',
+      component: AboutView,
+      meta: { requiresAuth: true }
+    },
+    // Admin routes
+    {
       path: '/admin',
       name: 'home',
       component: HomeView
@@ -44,39 +85,23 @@ const router = createRouter({
       path: '/admin/conversations',
       name: 'conversations',
       component: ConversationsView 
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: LoginView
-    },
-    {
-      path: '/signup',
-      name: 'signup',
-      component: SignUpView
-    },
-    {
-      path: '/channels',
-      name: 'channels',
-      component: ChannelsView
-    },
-    {
-      path: '/chat',
-      name: 'chat',
-      component: ChatView
-    },
-    {
-      path: '/friends',
-      name: 'friends',
-      component: FriendsView
-    },
-    {
-      path: '/about',
-      name: 'about',
-      component: AboutView
     }
-
   ]
+})
+
+// Navigation guards
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = !!localStorage.getItem('authToken')
+  
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    // Redirect to login if route requires auth and user is not authenticated
+    next('/login')
+  } else if (to.meta.requiresGuest && isAuthenticated) {
+    // Redirect to channels if route is for guests only and user is authenticated
+    next('/channels')
+  } else {
+    next()
+  }
 })
 
 export default router
