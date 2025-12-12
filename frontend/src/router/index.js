@@ -59,32 +59,38 @@ const router = createRouter({
     {
       path: '/admin',
       name: 'home',
-      component: HomeView
+      component: HomeView,
+      meta: { requiresAuth: true, requiresAdmin: true }
     },
     {
       path: '/admin/groups',
       name: 'groups',
-      component: GroupsView
+      component: GroupsView,
+      meta: { requiresAuth: true, requiresAdmin: true }
     },
     {
       path: '/admin/users',
       name: 'users',
-      component: UsersView
+      component: UsersView,
+      meta: { requiresAuth: true, requiresAdmin: true }
     },
     {
       path: "/admin/usergroups",
       name: "usergroups",
-      component: UserGroupsView
+      component: UserGroupsView,
+      meta: { requiresAuth: true, requiresAdmin: true }
     },
     { 
       path: '/admin/messages',
       name: 'messages',
-      component: MessagesView 
+      component: MessagesView,
+      meta: { requiresAuth: true, requiresAdmin: true }
     },
     { 
       path: '/admin/conversations',
       name: 'conversations',
-      component: ConversationsView 
+      component: ConversationsView,
+      meta: { requiresAuth: true, requiresAdmin: true }
     }
   ]
 })
@@ -92,10 +98,15 @@ const router = createRouter({
 // Navigation guards
 router.beforeEach((to, from, next) => {
   const isAuthenticated = !!localStorage.getItem('authToken')
+  const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null')
+  const isAdmin = currentUser?.role === 'admin'
   
   if (to.meta.requiresAuth && !isAuthenticated) {
     // Redirect to login if route requires auth and user is not authenticated
     next('/login')
+  } else if (to.meta.requiresAdmin && !isAdmin) {
+    // Redirect to channels if route requires admin and user is not admin
+    next('/channels')
   } else if (to.meta.requiresGuest && isAuthenticated) {
     // Redirect to channels if route is for guests only and user is authenticated
     next('/channels')

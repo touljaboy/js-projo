@@ -16,6 +16,11 @@ export function useAuth() {
     return !!authToken.value
   }
 
+  // Sprawdź czy użytkownik ma rolę admina
+  const isAdmin = () => {
+    return currentUser.value?.role === 'admin'
+  }
+
   // Załaduj dane użytkownika z localStorage przy starcie
   const initAuth = () => {
     const token = localStorage.getItem('authToken')
@@ -68,7 +73,7 @@ export function useAuth() {
 
       const data = await response.json()
       
-      // Zapisz token i dane użytkownika
+      // Zapisz token i dane użytkownika (z rolą)
       authToken.value = data.token
       currentUser.value = data.user
       
@@ -113,6 +118,7 @@ export function useAuth() {
     currentUser,
     authToken,
     isAuthenticated,
+    isAdmin,
     register,
     login,
     logout,

@@ -11,6 +11,7 @@ const {
   isLoading,
   error,
   addUser,
+  updateUser,
   removeUser
 } = useUsers()
 </script>
@@ -27,7 +28,13 @@ const {
     <div class="users-list">
       <p v-if="error" class="error">{{ error }}</p>
       <p v-else-if="!isLoading && users.length === 0">Brak użytkowników.</p>
-      <UserCard v-for="u in users" :key="u.id" :user="u" @delete="removeUser" />
+      <UserCard 
+        v-for="u in users" 
+        :key="u.id" 
+        :user="u" 
+        @update="updateUser"
+        @delete="removeUser" 
+      />
     </div>
   </div>
 </template>

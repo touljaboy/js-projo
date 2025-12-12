@@ -5,6 +5,7 @@ const emit = defineEmits(["submit"]);
 
 const newUserName = ref("");
 const newUserPass = ref("");
+const newUserRole = ref("user");
 
 const onSubmit = () => {
   if (!newUserName.value.trim() || !newUserPass.value.trim()) return;
@@ -12,10 +13,12 @@ const onSubmit = () => {
   emit("submit", {
     user: newUserName.value,
     password_hash: newUserPass.value,
+    role: newUserRole.value,
   });
 
   newUserName.value = "";
   newUserPass.value = "";
+  newUserRole.value = "user";
 };
 </script>
 
@@ -32,6 +35,11 @@ const onSubmit = () => {
       placeholder="Password hash..."
       type="text"
     />
+
+    <select v-model="newUserRole">
+      <option value="user">User</option>
+      <option value="admin">Admin</option>
+    </select>
 
     <button type="submit">Dodaj</button>
   </form>

@@ -27,7 +27,7 @@ exports.register = (username, password, email, pesel) => {
     // Utwórz nowego użytkownika
     const newUser = usersService.create(username, password);
     
-    // Zwróć użytkownika bez hasła
+    // Zwróć użytkownika bez hasła (z rolą)
     const { password_hash, ...userWithoutPassword } = newUser;
     return userWithoutPassword;
 };
@@ -50,9 +50,9 @@ exports.login = (username, password) => {
 
     // Generuj prosty token sesji (w produkcji użyj JWT)
     const sessionToken = `session_${user.id}_${Date.now()}`;
-    sessions.set(sessionToken, { userId: user.id, username: user.user });
+    sessions.set(sessionToken, { userId: user.id, username: user.user, role: user.role });
 
-    // Zwróć dane bez hasła
+    // Zwróć dane bez hasła (z rolą)
     const { password_hash, ...userWithoutPassword } = user;
     return {
         user: userWithoutPassword,

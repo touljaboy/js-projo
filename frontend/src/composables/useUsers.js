@@ -55,6 +55,22 @@ export function useUsers() {
     }
   }
 
+  const updateUser = async (id, payload) => {
+    try {
+      const res = await fetch(`${API_URL}/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Błąd aktualizacji użytkownika.')
+      await runSearch(search.value)
+    } catch (err) {
+      console.error(err)
+      alert(err.message)
+    }
+  }
+
   return {
     search,
     users,
@@ -62,6 +78,7 @@ export function useUsers() {
     error,
     runSearch,
     addUser,
+    updateUser,
     removeUser,
   }
 }
