@@ -34,14 +34,16 @@ exports.getGroupById = (req, res) => {
 
 // POST /v1/groups
 exports.createGroup = (req, res) => {
-    const { name, is_public, password, creator_id } = req.body;
-    try {
-        // Service handles validation, ID generation, and saving
-        const newGroup = groupsService.create(name, is_public, password, creator_id);
-        res.status(201).json(newGroup); // 201 Created
-    } catch (error) {
-        handleError(res, error); // Handles 400 from service
-    }
+  const { name, is_public, password, creator_id } = req.body;
+
+  console.log("CREATE GROUP body:", req.body);
+
+  try {
+    const newGroup = groupsService.create({ name, is_public, password, creator_id });
+    res.status(201).json(newGroup);
+  } catch (error) {
+    handleError(res, error);
+  }
 };
 
 // PUT /v1/groups/:id (Full Replacement)

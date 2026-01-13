@@ -1,21 +1,14 @@
+const db = require('../db');
+
 // -----------------------------
 // USER SERVICE (MOCK DB)
 // -----------------------------
-
-// Mock users data
-let users = [
-    { id: 1, user: 'brian', password_hash: 'mockhash1', role: 'user', created_at: new Date().toISOString() },
-    { id: 2, user: 'joshua', password_hash: 'mockhash2', role: 'user', created_at: new Date().toISOString() },
-    { id: 3, user: 'mirabell', password_hash: 'mockhash3', role: 'user', created_at: new Date().toISOString() },
-    { id: 4, user: 'admin', password_hash: 'admin123', role: 'admin', created_at: new Date().toISOString() },
-];
-let nextUserId = 5; // Start from 5
 
 /**
  * Retrieves all users.
  */
 exports.getAll = () => {
-    return users;
+    return db.prepare('SELECT id, user, password_hash, role, created_at FROM users ORDER BY id').all();
 };
 
 /**
@@ -25,12 +18,14 @@ exports.getAll = () => {
  * @throws {object} 404 error if user not found.
  */
 exports.getOne = (id) => {
-    const user = users.find(u => u.id === id);
-    if (!user) {
-        // Throw exception that controller will catch
+    const row = db.prepare(
+        'SELECT id, user, password_hash, role, created_at FROM users WHERE id = ?'
+    ).get(id);
+
+    if (!row) {
         throw { status: 404, message: `Użytkownik o ID ${id} nie został znaleziony.` };
     }
-    return user;
+    return row;
 };
 
 /**
@@ -46,17 +41,21 @@ exports.create = (user, password_hash, role = 'user') => {
         throw { status: 400, message: "Brak wymaganych pól: user, password_hash" };
     }
 
-    const newUser = {
-        id: nextUserId++,
-        user,
-        password_hash,
-        role: role || 'user', // Domyślnie wszyscy nowi użytkownicy mają rolę 'user'
-        created_at: new Date().toISOString(),
-    };
+    try {
+        const info = db.prepare(
+            'INSERT INTO users (user, password_hash, role, created_at) VALUES (?, ?, ?, datetime("now"))'
+        ).run(user, password_hash, role || 'user');
 
-    users.push(newUser);
-    return newUser;
+        return exports.getOne(Number(info.lastInsertRowid));
+    } catch (e) {
+        // np. UNIQUE constraint failed: users.user
+        if (String(e.message).includes('UNIQUE')) {
+            throw { status: 409, message: 'Taki użytkownik już istnieje.' };
+        }
+        throw e;
+    }
 };
+
 
 /**
  * Updates a user by ID (PATCH).
@@ -68,13 +67,24 @@ exports.create = (user, password_hash, role = 'user') => {
  * @throws {object} 404 error if user not found.
  */
 exports.update = (id, newUserName, newPass, newRole) => {
-    const user = exports.getOne(id); // Use getOne to check existence (throws 404 if not found)
+    const current = exports.getOne(id);
 
-    if (newUserName !== undefined) user.user = newUserName;
-    if (newPass !== undefined) user.password_hash = newPass;
-    if (newRole !== undefined) user.role = newRole;
+    const nextUser = (newUserName !== undefined) ? newUserName : current.user;
+    const nextPass = (newPass !== undefined) ? newPass : current.password_hash;
+    const nextRole = (newRole !== undefined) ? newRole : current.role;
 
-    return user;
+    try {
+        db.prepare(
+            'UPDATE users SET user = ?, password_hash = ?, role = ? WHERE id = ?'
+        ).run(nextUser, nextPass, nextRole, id);
+
+        return exports.getOne(id);
+    } catch (e) {
+        if (String(e.message).includes('UNIQUE')) {
+            throw { status: 409, message: 'Taki użytkownik już istnieje.' };
+        }
+        throw e;
+    }
 };
 
 /**
@@ -84,12 +94,8 @@ exports.update = (id, newUserName, newPass, newRole) => {
  * @throws {object} 404 error if user not found.
  */
 exports.remove = (id) => {
-    const index = users.findIndex(u => u.id === id);
+  const current = exports.getOne(id); // rzuci 404 jeśli nie ma
 
-    if (index === -1) {
-        throw { status: 404, message: `Użytkownik o ID ${id} nie został znaleziony.` };
-    }
-
-    const [deleted] = users.splice(index, 1);
-    return deleted;
+  db.prepare('DELETE FROM users WHERE id = ?').run(id);
+  return current;
 };
