@@ -1,23 +1,4 @@
-// -----------------------------
-// CONVERSATIONS SERVICE
-// -----------------------------
-
-let conversations = [
-  {
-    id: 201,
-    user_a_id: 1,
-    user_b_id: 2,
-    last_message_at: new Date('2025-05-10T08:00:00Z')
-  },
-  {
-    id: 202,
-    user_a_id: 1,
-    user_b_id: 3,
-    last_message_at: null
-  }
-];
-
-let nextConversationId = 203;
+const db = require('../db');
 
 
 // --- FILTER HELPERS ---
@@ -45,18 +26,38 @@ function filterByUserB(list, userBId) {
 
 // --- GET ALL ---
 exports.getAll = (user_a_id, user_b_id) => {
-  let result = [...conversations];
+  let rows = db.prepare(`
+    SELECT id, user_a_id, user_b_id, last_message_at
+    FROM conversations
+    ORDER BY id
+  `).all();
 
-  if (user_a_id) result = filterByUserA(result, user_a_id);
-  if (user_b_id) result = filterByUserB(result, user_b_id);
+  // zachowujemy dokładnie zachowanie z mocka: filtr po A, potem po B, i 404 jeśli pusto
+  if (user_a_id) {
+    rows = rows.filter(c => c.user_a_id === parseInt(user_a_id));
+    if (rows.length === 0) {
+      throw { status: 404, message: `Nie znaleziono konwersacji dla user_a_id=${user_a_id}` };
+    }
+  }
 
-  return result;
+  if (user_b_id) {
+    rows = rows.filter(c => c.user_b_id === parseInt(user_b_id));
+    if (rows.length === 0) {
+      throw { status: 404, message: `Nie znaleziono konwersacji dla user_b_id=${user_b_id}` };
+    }
+  }
+
+  return rows;
 };
 
 
 // --- GET ONE ---
 exports.getOne = (id) => {
-  return conversations.find(c => c.id === id);
+  return db.prepare(`
+    SELECT id, user_a_id, user_b_id, last_message_at
+    FROM conversations
+    WHERE id = ?
+  `).get(id) || null;
 };
 
 
@@ -66,52 +67,58 @@ exports.create = (user_a_id, user_b_id) => {
     throw { status: 400, message: "Brak wymaganych pól: user_a_id, user_b_id." };
   }
 
-  const exists = conversations.find(conv =>
-    (conv.user_a_id === user_a_id && conv.user_b_id === user_b_id) ||
-    (conv.user_a_id === user_b_id && conv.user_b_id === user_a_id)
-  );
+  const a = Number(user_a_id);
+  const b = Number(user_b_id);
+
+  const exists = db.prepare(`
+    SELECT id FROM conversations
+    WHERE (user_a_id = ? AND user_b_id = ?) OR (user_a_id = ? AND user_b_id = ?)
+  `).get(a, b, b, a);
 
   if (exists) {
-    throw { status: 409, message: `Konwersacja między ${user_a_id} i ${user_b_id} już istnieje.` };
+    throw { status: 409, message: `Konwersacja między ${a} i ${b} już istnieje.` };
   }
 
-  const newConv = {
-    id: nextConversationId++,
-    user_a_id,
-    user_b_id,
-    last_message_at: null
-  };
+  try {
+    const info = db.prepare(`
+      INSERT INTO conversations (user_a_id, user_b_id, last_message_at)
+      VALUES (?, ?, NULL)
+    `).run(a, b);
 
-  conversations.push(newConv);
-  return newConv;
+    return exports.getOne(Number(info.lastInsertRowid));
+  } catch (e) {
+    if (String(e.message).includes('FOREIGN KEY')) {
+      throw { status: 400, message: 'Nieprawidłowy user_a_id albo user_b_id.' };
+    }
+    throw e;
+  }
 };
 
 
 // --- UPDATE ---
 exports.update = (id, last_message_at) => {
-  const index = conversations.findIndex(c => c.id === parseInt(id));
-
-  if (index === -1) {
+  const conv = exports.getOne(parseInt(id));
+  if (!conv) {
     throw { status: 404, message: `Konwersacja o ID ${id} nie istnieje.` };
   }
-
   if (!last_message_at) {
     throw { status: 400, message: "Brak last_message_at w PATCH." };
   }
 
-  conversations[index].last_message_at = new Date(last_message_at);
+  const iso = new Date(last_message_at).toISOString();
 
-  return conversations[index];
+  db.prepare(`
+    UPDATE conversations SET last_message_at = ? WHERE id = ?
+  `).run(iso, parseInt(id));
+
+  return exports.getOne(parseInt(id));
 };
 
 
 // --- DELETE ---
 exports.remove = (id) => {
-  const initialLength = conversations.length;
-
-  conversations = conversations.filter(c => c.id !== parseInt(id));
-
-  if (conversations.length === initialLength) {
+  const info = db.prepare(`DELETE FROM conversations WHERE id = ?`).run(parseInt(id));
+  if (info.changes === 0) {
     throw { status: 404, message: `Konwersacja o ID ${id} nie istnieje.` };
   }
 };
@@ -120,11 +127,8 @@ exports.remove = (id) => {
 // PUT (FULL REPLACE)
 // -----------------------------------------
 exports.replace = (id, data) => {
-  const index = conversations.findIndex(c => c.id === parseInt(id));
-
-  if (index === -1) {
-    return null;
-  }
+  const conv = exports.getOne(parseInt(id));
+  if (!conv) return null;
 
   const { user_a_id, user_b_id, last_message_at } = data;
 
@@ -132,31 +136,35 @@ exports.replace = (id, data) => {
     throw { status: 400, message: "PUT wymaga pól: user_a_id, user_b_id." };
   }
 
-  // sprawdź duplikat
-  const duplicate = conversations.find(
-    conv =>
-      (
-        (conv.user_a_id === user_a_id && conv.user_b_id === user_b_id) ||
-        (conv.user_a_id === user_b_id && conv.user_b_id === user_a_id)
-      ) &&
-      conv.id !== parseInt(id)
-  );
+  const a = Number(user_a_id);
+  const b = Number(user_b_id);
+
+  const duplicate = db.prepare(`
+    SELECT id FROM conversations
+    WHERE (
+      (user_a_id = ? AND user_b_id = ?) OR
+      (user_a_id = ? AND user_b_id = ?)
+    ) AND id <> ?
+  `).get(a, b, b, a, parseInt(id));
 
   if (duplicate) {
-    throw {
-      status: 409,
-      message: `Konwersacja między ${user_a_id} i ${user_b_id} już istnieje.`
-    };
+    throw { status: 409, message: `Konwersacja między ${a} i ${b} już istnieje.` };
   }
 
-  const newConv = {
-    id: parseInt(id),
-    user_a_id,
-    user_b_id,
-    last_message_at: last_message_at ? new Date(last_message_at) : null
-  };
+  const iso = last_message_at ? new Date(last_message_at).toISOString() : null;
 
-  conversations[index] = newConv;
+  try {
+    db.prepare(`
+      UPDATE conversations
+      SET user_a_id = ?, user_b_id = ?, last_message_at = ?
+      WHERE id = ?
+    `).run(a, b, iso, parseInt(id));
+  } catch (e) {
+    if (String(e.message).includes('FOREIGN KEY')) {
+      throw { status: 400, message: 'Nieprawidłowy user_a_id albo user_b_id.' };
+    }
+    throw e;
+  }
 
-  return newConv;
+  return exports.getOne(parseInt(id));
 };

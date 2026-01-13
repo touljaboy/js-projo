@@ -13,6 +13,8 @@ app.use(cors({ origin: 'http://localhost:5173' }));
 
 app.use(express.json());
 
+const db = require('./db');
+
 const userGroupsRouter = require('./routes/userGroups.routes');
 app.use('/v1/usergroups', userGroupsRouter);
 

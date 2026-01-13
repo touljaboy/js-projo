@@ -2,157 +2,136 @@
 // GROUP SERVICE (MOCK DB)
 // -----------------------------
 
-let groups = [
-    {
-        id: 101,
-        name: "kotki",
-        is_public: true,
-        password: null, // public group
-        creator_id: 1,
-        created_at: new Date('2025-01-15T10:00:00Z').toISOString()
-    },
-    {
-        id: 102,
-        name: "pieski",
-        is_public: false,
-        password: 'securehash', // private group
-        creator_id: 1,
-        created_at: new Date('2025-02-20T14:30:00Z').toISOString()
-    }
-];
-
-let nextGroupId = 103;
+const db = require('../db');
 
 // -----------------------------------------
 // GET ALL
 // -----------------------------------------
 exports.getAll = () => {
-    // Return all groups, omitting the sensitive password field for safety
-    return groups.map(({ password, ...group }) => group);
+    return db.prepare(`
+    SELECT id, name, is_public, password, creator_id, created_at
+    FROM groups
+    ORDER BY id
+  `).all();
 };
 
 // -----------------------------------------
 // GET ONE BY ID
 // -----------------------------------------
 exports.getOne = (id) => {
-    const group = groups.find(g => g.id === id);
+    const row = db.prepare(`
+    SELECT id, name, is_public, password, creator_id, created_at
+    FROM groups
+    WHERE id = ?
+  `).get(id);
 
-    if (!group) {
-        // Throw 404 error for the controller to catch
-        throw { status: 404, message: 'Grupa nie istnieje' };
+    if (!row) {
+        throw { status: 404, message: `Grupa o ID ${id} nie została znaleziona.` };
     }
-    
-    // Omit password before returning
-    const { password, ...safeGroup } = group;
-    return safeGroup;
+    return row;
 };
 
 // -----------------------------------------
 // CREATE GROUP
 // -----------------------------------------
-exports.create = (name, is_public, password, creator_id) => {
-    
-    // 1. Core Validation
-    if (!name || is_public === undefined) {
-        throw { status: 400, message: 'Brak wymaganych pól, np nazwy grupy lub informacji czy jest publiczna' };
+exports.create = ({ id, name, is_public = true, password = null, creator_id }) => {
+    if (!name || creator_id == null) {
+        throw { status: 400, message: "Brak wymaganych pól: name, creator_id" };
     }
 
-    // 2. Logic Validation
-    if (is_public && password) {
-        throw { status: 400, message: 'Nie można utworzyć publicznej grupy z haslem' };
-    } else if (!is_public && !password) {
-        throw { status: 400, message: 'Brak hasla do prywatnej grupy' };
-    }
-    
-    // 3. Create object
-    const newGroup = {
-        id: nextGroupId++,
-        name,
-        is_public,
-        password: is_public ? null : password,
-        creator_id: creator_id || null,
-        created_at: new Date().toISOString()
-    };
+    const isPublicInt = is_public ? 1 : 0;
+    const pass = isPublicInt === 1 ? null : password;
 
-    // 4. Save and return
-    groups.push(newGroup);
-    
-    // Return safe version (without password)
-    const { password: _, ...safeGroup } = newGroup;
-    return safeGroup;
+    try {
+        if (id != null) {
+            db.prepare(`
+        INSERT INTO groups (id, name, is_public, password, creator_id, created_at)
+        VALUES (?, ?, ?, ?, ?, datetime('now'))
+      `).run(id, name, isPublicInt, pass, creator_id);
+            return exports.getOne(id);
+        }
+
+        const info = db.prepare(`
+      INSERT INTO groups (name, is_public, password, creator_id, created_at)
+      VALUES (?, ?, ?, ?, datetime('now'))
+    `).run(name, isPublicInt, pass, creator_id);
+
+        return exports.getOne(Number(info.lastInsertRowid));
+    } catch (e) {
+        if (String(e.message).includes('UNIQUE')) {
+            throw { status: 409, message: 'Taka grupa już istnieje.' };
+        }
+        if (String(e.message).includes('FOREIGN KEY')) {
+            throw { status: 400, message: 'creator_id nie istnieje w users.' };
+        }
+        throw e;
+    }
 };
+
 
 
 // -----------------------------------------
 // PUT (FULL REPLACE)
 // -----------------------------------------
 exports.replace = (id, name, is_public, password) => {
-    const index = groups.findIndex(g => g.id === id);
+    // 1) czy istnieje
+    const current = exports.getOne(id);
 
-    if (index === -1) {
-        throw { status: 404, message: 'Grupa nie istnieje' };
-    }
-    
-    // 1. Core Validation
+    // 2) walidacje jak wcześniej
     if (!name || is_public === undefined) {
         throw { status: 400, message: 'Brak wymaganych pól: name, is_public' };
     }
 
-    // 2. Logic Validation
-    if (is_public && password) {
+    const isPublicInt = is_public ? 1 : 0;
+
+    if (isPublicInt === 1 && password) {
         throw { status: 400, message: 'Publiczna grupa nie może mieć hasła' };
     }
-    if (!is_public && !password) {
+    if (isPublicInt === 0 && !password) {
         throw { status: 400, message: 'Prywatna grupa musi mieć hasło' };
     }
-    
-    // 3. Create updated object
-    const updatedGroup = {
-        id: id,
-        name,
-        is_public,
-        password: is_public ? null : password,
-        created_at: groups[index].created_at, // Keep original creation date
-        updated_at: new Date().toISOString() // Add update timestamp
-    };
 
-    // 4. Replace in array
-    groups[index] = updatedGroup;
-    
-    // Return safe version (without password)
-    const { password: _, ...safeGroup } = updatedGroup;
-    return safeGroup;
+    // 3) update
+    try {
+        db.prepare(`
+      UPDATE groups
+      SET name = ?, is_public = ?, password = ?
+      WHERE id = ?
+    `).run(name, isPublicInt, isPublicInt === 1 ? null : password, id);
+    } catch (e) {
+        if (String(e.message).includes('UNIQUE')) {
+            throw { status: 409, message: 'Taka grupa już istnieje.' };
+        }
+        throw e;
+    }
+
+    // 4) zwrot (bez password, jak wcześniej)
+    const updated = exports.getOne(id);
+    const { password: _pw, ...safe } = updated;
+    return safe;
 };
+
 
 
 // -----------------------------------------
 // DELETE GROUP
 // -----------------------------------------
 exports.remove = (id) => {
-    const index = groups.findIndex(g => g.id === id);
-
-    if (index === -1) {
-        throw { status: 404, message: 'Grupa nie istnieje' };
-    }
-
-    const [deleted] = groups.splice(index, 1);
-    
-    // Return safe version (without password)
-    const { password: _, ...safeGroup } = deleted;
-    return safeGroup;
+    const current = exports.getOne(id);
+    db.prepare('DELETE FROM groups WHERE id = ?').run(id);
+    return current;
 };
 
 // -----------------------------------------
 // VERIFY GROUP PASSWORD
 // -----------------------------------------
 exports.verifyPassword = (id, password) => {
-    const group = groups.find(g => g.id === id);
+    const group = exports.getOne(id);
 
-    if (!group) {
-        throw { status: 404, message: 'Grupa nie istnieje' };
-    }
+    // is_public w DB to 1/0
+    const isPublic = group.is_public === 1;
 
-    if (group.is_public) {
+    if (isPublic) {
         return { valid: true, message: 'Grupa jest publiczna' };
     }
 
@@ -161,7 +140,7 @@ exports.verifyPassword = (id, password) => {
     }
 
     const isValid = group.password === password;
-    
+
     if (!isValid) {
         throw { status: 401, message: 'Nieprawidłowe hasło' };
     }

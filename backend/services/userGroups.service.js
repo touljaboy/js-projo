@@ -1,31 +1,14 @@
-// -----------------------------
-// USER GROUPS SERVICE
-// -----------------------------
-
-let userGroups = [
-    { id: 1, user_id: 1, group_id: 101, joined_at: new Date('2025-03-01T10:00:00Z') },
-    { id: 2, user_id: 2, group_id: 101, joined_at: new Date('2025-03-01T10:00:00Z') },
-    { id: 3, user_id: 1, group_id: 102, joined_at: new Date('2025-03-05T11:00:00Z') }
-];
-
-let nextUserGroupId = 4;
-
+const db = require('../db');
 
 // -----------------------------------------
 // GET ALL WITH OPTIONAL FILTERS
 // -----------------------------------------
-exports.getAll = (user_id, group_id) => {
-    let result = [...userGroups];
-
-    if (user_id) {
-        result = result.filter(ug => ug.user_id === parseInt(user_id));
-    }
-
-    if (group_id) {
-        result = result.filter(ug => ug.group_id === parseInt(group_id));
-    }
-
-    return result;
+exports.getAll = () => {
+    return db.prepare(`
+    SELECT id, user_id, group_id, joined_at
+    FROM user_groups
+    ORDER BY id
+  `).all();
 };
 
 
@@ -33,36 +16,44 @@ exports.getAll = (user_id, group_id) => {
 // GET ONE BY ID
 // -----------------------------------------
 exports.getOne = (id) => {
-    return userGroups.find(ug => ug.id === id);
-};
+    const row = db.prepare(`
+    SELECT id, user_id, group_id, joined_at
+    FROM user_groups
+    WHERE id = ?
+  `).get(id);
 
+    if (!row) {
+        throw { status: 404, message: `Relacja o ID ${id} nie została znaleziona.` };
+    }
+    return row;
+};
 
 // -----------------------------------------
 // CREATE RELATION
 // -----------------------------------------
-exports.create = (user_id, group_id) => {
-
-    if (!user_id || !group_id) {
-        throw { status: 400, message: "Brak wymaganych pól: user_id, group_id." };
+exports.create = ({ user_id, group_id, joined_at }) => {
+    if (user_id == null || group_id == null) {
+        throw { status: 400, message: "Brak wymaganych pól: user_id, group_id" };
     }
 
-    const exists = userGroups.find(
-        ug => ug.user_id === user_id && ug.group_id === group_id
-    );
+    const joinedAt = joined_at || new Date().toISOString();
 
-    if (exists) {
-        throw { status: 409, message: `Użytkownik ${user_id} już należy do grupy ${group_id}.` };
+    try {
+        const info = db.prepare(`
+      INSERT INTO user_groups (user_id, group_id, joined_at)
+      VALUES (?, ?, ?)
+    `).run(user_id, group_id, joinedAt);
+
+        return exports.getOne(Number(info.lastInsertRowid));
+    } catch (e) {
+        if (String(e.message).includes('UNIQUE')) {
+            throw { status: 409, message: 'Ten użytkownik już jest w tej grupie.' };
+        }
+        if (String(e.message).includes('FOREIGN KEY')) {
+            throw { status: 400, message: 'Nieprawidłowy user_id albo group_id.' };
+        }
+        throw e;
     }
-
-    const newUG = {
-        id: nextUserGroupId++,
-        user_id,
-        group_id,
-        joined_at: new Date()
-    };
-
-    userGroups.push(newUG);
-    return newUG;
 };
 
 
@@ -70,71 +61,90 @@ exports.create = (user_id, group_id) => {
 // PATCH (PARTIAL UPDATE)
 // -----------------------------------------
 exports.update = (id, user_id, group_id) => {
-    const index = userGroups.findIndex(ug => ug.id === id);
+    const current = exports.getOne(id);
 
-    if (index === -1) {
-        throw { status: 404, message: `Relacja o ID ${id} nie istnieje.` };
-    }
+    const nextUserId = (user_id !== undefined) ? user_id : current.user_id;
+    const nextGroupId = (group_id !== undefined) ? group_id : current.group_id;
 
-    const relation = userGroups[index];
-
-    // check for duplicates if group_id changes
-    if (group_id && relation.group_id !== group_id) {
-        const duplicate = userGroups.find(
-            ug => ug.user_id === relation.user_id && ug.group_id === group_id
-        );
+    // jeśli zmienia się para, sprawdź duplikat (UNIQUE(user_id, group_id))
+    if (nextUserId !== current.user_id || nextGroupId !== current.group_id) {
+        const duplicate = db.prepare(`
+      SELECT id FROM user_groups
+      WHERE user_id = ? AND group_id = ? AND id <> ?
+    `).get(nextUserId, nextGroupId, id);
 
         if (duplicate) {
             throw {
                 status: 409,
-                message: `Użytkownik ${relation.user_id} już należy do grupy ${group_id}.`
+                message: `Użytkownik ${nextUserId} już należy do grupy ${nextGroupId}.`
             };
         }
     }
 
-    if (user_id !== undefined) relation.user_id = user_id;
-    if (group_id !== undefined) relation.group_id = group_id;
+    try {
+        db.prepare(`
+      UPDATE user_groups
+      SET user_id = ?, group_id = ?, joined_at = ?
+      WHERE id = ?
+    `).run(nextUserId, nextGroupId, new Date().toISOString(), id);
 
-    relation.joined_at = new Date();
-
-    return relation;
+        return exports.getOne(id);
+    } catch (e) {
+        if (String(e.message).includes('FOREIGN KEY')) {
+            throw { status: 400, message: 'Nieprawidłowy user_id albo group_id.' };
+        }
+        if (String(e.message).includes('UNIQUE')) {
+            throw { status: 409, message: `Użytkownik ${nextUserId} już należy do grupy ${nextGroupId}.` };
+        }
+        throw e;
+    }
 };
+
 
 
 // -----------------------------------------
 // PUT (FULL REPLACE)
 // -----------------------------------------
 exports.replace = (id, data) => {
-    const index = userGroups.findIndex(ug => ug.id === parseInt(id));
+    const current = exports.getOne(Number(id));
 
-    if (index === -1) {
-        return null;
+    if (data.user_id == null || data.group_id == null) {
+        throw { status: 400, message: 'Brak wymaganych pól: user_id, group_id' };
     }
 
-    const duplicate = userGroups.find(
-        ug =>
-            ug.user_id === data.user_id &&
-            ug.group_id === data.group_id &&
-            ug.id !== parseInt(id)
-    );
+    const nextUserId = data.user_id;
+    const nextGroupId = data.group_id;
+
+    // duplikat pary (z wykluczeniem tego id)
+    const duplicate = db.prepare(`
+    SELECT id FROM user_groups
+    WHERE user_id = ? AND group_id = ? AND id <> ?
+  `).get(nextUserId, nextGroupId, Number(id));
 
     if (duplicate) {
         throw {
             status: 409,
-            message: `Użytkownik ${data.user_id} już należy do grupy ${data.group_id}.`
+            message: `Użytkownik ${nextUserId} już należy do grupy ${nextGroupId}.`
         };
     }
 
-    const newItem = {
-        id: parseInt(id),
-        user_id: data.user_id,
-        group_id: data.group_id,
-        joined_at: new Date()
-    };
+    try {
+        db.prepare(`
+      UPDATE user_groups
+      SET user_id = ?, group_id = ?, joined_at = ?
+      WHERE id = ?
+    `).run(nextUserId, nextGroupId, new Date().toISOString(), Number(id));
 
-    userGroups[index] = newItem;
-
-    return newItem;
+        return exports.getOne(Number(id));
+    } catch (e) {
+        if (String(e.message).includes('FOREIGN KEY')) {
+            throw { status: 400, message: 'Nieprawidłowy user_id albo group_id.' };
+        }
+        if (String(e.message).includes('UNIQUE')) {
+            throw { status: 409, message: `Użytkownik ${nextUserId} już należy do grupy ${nextGroupId}.` };
+        }
+        throw e;
+    }
 };
 
 
@@ -142,11 +152,7 @@ exports.replace = (id, data) => {
 // DELETE RELATION
 // -----------------------------------------
 exports.remove = (id) => {
-    const initialLength = userGroups.length;
-
-    userGroups = userGroups.filter(ug => ug.id !== id);
-
-    if (userGroups.length === initialLength) {
-        throw { status: 404, message: `Relacja o ID ${id} nie istnieje.` };
-    }
+    const current = exports.getOne(id);
+    db.prepare('DELETE FROM user_groups WHERE id = ?').run(id);
+    return current;
 };
