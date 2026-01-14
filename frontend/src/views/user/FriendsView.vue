@@ -4,6 +4,8 @@ import { ref, computed } from 'vue'
 const currentUser = ref('user1, user2')
 const searchFriends = ref('')
 const searchAdd = ref('')
+const showFriendsList = ref(true)
+const showAddList = ref(true)
 
 const friendsList = ref([
   { id: 1, name: 'Carl Johnson', initials: 'CJ' },
@@ -50,8 +52,17 @@ const addFriend = (friend) => {
 
     <h1>Hello GUYS!</h1>
 
+    <div class="toggle-buttons">
+      <button class="toggle-panel-btn" @click="showFriendsList = !showFriendsList">
+        {{ showFriendsList ? '◀ Ukryj konwersacje' : '▶ Pokaż konwersacje' }}
+      </button>
+      <button class="toggle-panel-btn" @click="showAddList = !showAddList">
+        {{ showAddList ? 'Ukryj dodawanie ▶' : '◀ Pokaż dodawanie' }}
+      </button>
+    </div>
+
     <div class="friends-wrapper">
-      <div class="friends-list">
+      <div class="friends-list" :class="{ hidden: !showFriendsList }">
         <input
           type="search"
           v-model="searchFriends"
@@ -66,7 +77,7 @@ const addFriend = (friend) => {
         </ul>
       </div>
 
-      <div class="friends-add">
+      <div class="friends-add" :class="{ hidden: !showAddList }">
         <input
           type="search"
           v-model="searchAdd"
@@ -223,5 +234,116 @@ h1 {
   display: flex;
   justify-content: center;
   gap: 1rem;
+}
+
+.toggle-buttons {
+  display: none;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.toggle-panel-btn {
+  padding: 0.6rem 1rem;
+  background: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+.toggle-panel-btn:hover {
+  background: #1976D2;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .toggle-buttons {
+    display: flex;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  nav ul {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  nav ul li a {
+    font-size: 0.85rem;
+  }
+
+  .friends-wrapper {
+    position: relative;
+    min-height: 400px;
+  }
+
+  .friends-list,
+  .friends-add {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 80%;
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+  }
+
+  .friends-list {
+    left: 0;
+    z-index: 10;
+  }
+
+  .friends-list.hidden {
+    transform: translateX(-100%);
+  }
+
+  .friends-add {
+    right: 0;
+    z-index: 10;
+  }
+
+  .friends-add.hidden {
+    transform: translateX(100%);
+  }
+
+  .friends-list input,
+  .friends-add input {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0.5rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .toggle-panel-btn {
+    font-size: 0.85rem;
+    padding: 0.75rem 0.8rem;
+  }
+
+  .friends-list,
+  .friends-add {
+    width: 260px;
+    max-width: 85%;
+  }
+
+  .friends-wrapper {
+    min-height: 350px;
+  }
 }
 </style>

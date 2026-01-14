@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useRouter } from 'vue-router'
+import UserHeader from '@/components/user/UserHeader/UserHeader.vue'
 
 const router = useRouter()
 const { currentUser, logout, isAuthenticated } = useAuth()
@@ -13,6 +14,8 @@ const users = ref([])
 const selectedConversation = ref(null)
 const messages = ref([])
 const newMessage = ref('')
+const showConversationsList = ref(true)
+const showUsersList = ref(true)
 let messagesInterval = null
 
 const API_URL = 'http://localhost:3000/v1'
@@ -213,27 +216,22 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="container">
-    <header class="header">
-      <div class="user-info">
-        <div class="user-avatar">{{ (currentUser?.user || 'U').charAt(0).toUpperCase() }}</div>
-        <span class="user-name">{{ currentUser?.user || 'Użytkownik' }}</span>
-      </div>
-      <small class="site-name">Yappchat</small>
-      <nav>
-        <ul>
-          <li><router-link to="/channels">Channels</router-link></li>
-          <li><router-link to="/chat" class="active">Friends</router-link></li>
-          <li><router-link to="/about">About</router-link></li>
-          <li><a href="#" @click.prevent="handleLogout">Logout</a></li>
-        </ul>
-      </nav>
-    </header>
+    <UserHeader />
 
     <h1>Wiadomości prywatne</h1>
 
+    <div class="toggle-buttons">
+      <button class="toggle-panel-btn" @click="showConversationsList = !showConversationsList">
+        {{ showConversationsList ? '◀ Ukryj konwersacje' : '▶ Pokaż konwersacje' }}
+      </button>
+      <button class="toggle-panel-btn" @click="showUsersList = !showUsersList">
+        {{ showUsersList ? 'Ukryj użytkowników ▶' : '◀ Pokaż użytkowników' }}
+      </button>
+    </div>
+
     <div class="chat-wrapper">
       <!-- Lista konwersacji -->
-      <div class="conversations-list">
+      <div class="conversations-list" :class="{ hidden: !showConversationsList }">
         <h3>Konwersacje</h3>
         <input
           type="search"
@@ -283,7 +281,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Lista użytkowników do dodania -->
-      <div class="users-list">
+      <div class="users-list" :class="{ hidden: !showUsersList }">
         <h3>Rozpocznij czat</h3>
         <input
           type="search"
@@ -312,85 +310,6 @@ onBeforeUnmount(() => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.85rem;
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background: #f5f5f5;
-  border-radius: 8px;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  flex: 1;
-}
-
-.user-avatar {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.3rem;
-  font-weight: bold;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
-}
-
-.user-name {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.header small {
-  flex: 1;
-}
-
-.site-name {
-  font-weight: bold;
-  text-align: center;
-  font-size: 1.8rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: 1.5px;
-}
-
-nav ul {
-  list-style: none;
-  display: flex;
-  gap: 1rem;
-  padding: 0;
-  margin: 0;
-}
-
-nav ul li a {
-  text-decoration: none;
-  color: black;
-  padding: 0.3rem 0.6rem;
-  border-radius: 6px;
-}
-
-nav ul li a {
-  text-decoration: none;
-  color: inherit;
-}
-
-nav ul li a.active,
-nav ul li a:hover {
-  background-color: black;
-  color: white;
 }
 
 h1 {
@@ -605,5 +524,131 @@ h1 {
   display: flex;
   justify-content: center;
   gap: 1rem;
+}
+
+.toggle-buttons {
+  display: none;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.toggle-panel-btn {
+  padding: 0.6rem 1rem;
+  background: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+.toggle-panel-btn:hover {
+  background: #1976D2;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .toggle-buttons {
+    display: flex;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  nav ul {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  nav ul li a {
+    font-size: 0.85rem;
+  }
+
+  .site-name {
+    font-size: 1.4rem;
+  }
+
+  .chat-wrapper {
+    position: relative;
+  }
+
+  .conversations-list,
+  .users-list {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 80%;
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+    z-index: 10;
+  }
+
+  .conversations-list {
+    left: 0;
+  }
+
+  .conversations-list.hidden {
+    transform: translateX(-100%);
+  }
+
+  .users-list {
+    right: 0;
+  }
+
+  .users-list.hidden {
+    transform: translateX(100%);
+  }
+
+  .chat-window {
+    width: 100%;
+  }
+
+  .conversations-list input,
+  .users-list input {
+    font-size: 16px;
+  }
+
+  .message-input input {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0.5rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .toggle-panel-btn {
+    font-size: 0.85rem;
+    padding: 0.75rem 0.8rem;
+  }
+
+  .conversations-list,
+  .users-list {
+    width: 260px;
+    max-width: 85%;
+  }
+
+  .message-input {
+    flex-direction: column;
+  }
+
+  .message-input button {
+    width: 100%;
+    padding: 0.75rem;
+  }
 }
 </style>
