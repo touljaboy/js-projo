@@ -2,3 +2,11 @@
   display: flex;
   gap: 10px;
 }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .inputs-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

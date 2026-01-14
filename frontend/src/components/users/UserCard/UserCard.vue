@@ -192,4 +192,23 @@ const saveEdit = () => {
   font-size: 14px;
   margin: 4px 0;
 }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .button-group {
+    flex-direction: column;
+  }
+
+  .edit-btn, .save-btn, .cancel-btn, .delete-btn {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+  }
+
+  .edit-mode input,
+  .edit-mode select {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 10px;
+  }
+}
 </style>

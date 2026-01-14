@@ -25,3 +25,17 @@
 .msg-body {
   font-size: 15px;
 }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .msg-header {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .card--msg .delete-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+  }
+}
