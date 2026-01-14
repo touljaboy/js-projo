@@ -13,3 +13,12 @@
 .card--conv .delete-btn {
   margin-top: 8px;
 }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .card--conv .delete-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+  }
+}

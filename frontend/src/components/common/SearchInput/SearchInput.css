@@ -35,3 +35,22 @@
 .search-input__clear:hover {
   opacity: 1;
 }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .search-input {
+    max-width: 100%;
+  }
+
+  .search-input__field {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 10px 36px 10px 12px;
+  }
+
+  .search-input__clear {
+    right: 8px;
+    height: 28px;
+    width: 28px;
+    font-size: 20px;
+  }
+}

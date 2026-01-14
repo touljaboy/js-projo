@@ -202,4 +202,52 @@ h1 {
   justify-content: center;
   gap: 1rem;
 }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .signup-container {
+    padding: 1.5rem;
+    margin: 1rem auto;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  .description {
+    font-size: 0.85rem;
+  }
+
+  .form input[type="text"],
+  .form input[type="password"],
+  .form input[type="email"] {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 0.75rem;
+  }
+
+  .signup-button {
+    padding: 1rem 1.5rem;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .signup-container {
+    padding: 1rem;
+    margin: 0.5rem auto;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  .description {
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .captcha-label {
+    font-size: 0.85rem;
+  }
+}
 </style>

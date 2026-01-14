@@ -65,4 +65,11 @@ const {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+
+/* Responsive grid */
+@media (max-width: 768px) {
+  .list {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

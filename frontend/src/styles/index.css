@@ -125,3 +125,66 @@ input {
     color: #666;
     margin-top: 5px;
 }
+
+/* Responsive Design */
+/* Tablets and smaller */
+@media (max-width: 768px) {
+    .container {
+        max-width: 100%;
+        padding: 0 16px;
+    }
+
+    .add-form {
+        flex-direction: column;
+        padding: 15px;
+    }
+
+    .add-form input,
+    .add-form textarea,
+    .add-form select {
+        width: 100%;
+    }
+
+    .add-form button {
+        width: 100%;
+    }
+
+    button {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .inputs {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .inputs input {
+        width: 100%;
+    }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+    .container {
+        padding: 0 12px;
+    }
+
+    .add-form {
+        padding: 12px;
+        gap: 8px;
+    }
+
+    button {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .card-content {
+        padding: 10px;
+    }
+
+    input, textarea {
+        font-size: 16px; 
+    }
+}

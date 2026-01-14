@@ -18,3 +18,24 @@
 .page-header__search {
   width: min(320px, 100%);
 }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .page-header__title {
+    font-size: 1.5rem;
+  }
+
+  .page-header__search-row {
+    justify-content: stretch;
+  }
+
+  .page-header__search {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header__title {
+    font-size: 1.3rem;
+  }
+}

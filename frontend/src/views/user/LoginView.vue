@@ -191,4 +191,47 @@ h1 {
 .social-icons span {
   cursor: pointer;
 }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 1.5rem;
+    margin: 1rem auto;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  .form input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 0.75rem;
+  }
+
+  .login-button {
+    padding: 1rem;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-container {
+    padding: 1rem;
+    margin: 0.5rem auto;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  .description {
+    font-size: 0.85rem;
+  }
+
+  .footer {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+}
 </style>

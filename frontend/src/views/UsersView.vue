@@ -49,4 +49,11 @@ const {
 .error {
   grid-column: 1 / -1;
 }
+
+/* Responsive grid */
+@media (max-width: 768px) {
+  .users-list {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

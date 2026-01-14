@@ -20,6 +20,7 @@ const newGroupPassword = ref('')
 const showPasswordPrompt = ref(false)
 const passwordInput = ref('')
 const pendingGroup = ref(null)
+const showGroupsList = ref(true)
 let messagesInterval = null
 
 const API_URL = 'http://localhost:3000/v1'
@@ -338,9 +339,13 @@ onBeforeUnmount(() => {
 
     <h1>Czaty grupowe</h1>
 
+    <button class="toggle-panel-btn" @click="showGroupsList = !showGroupsList">
+      {{ showGroupsList ? '◀ Ukryj grupy' : '▶ Pokaż grupy' }}
+    </button>
+
     <div class="channels-wrapper">
       <!-- Lista grup -->
-      <div class="groups-list">
+      <div class="groups-list" :class="{ hidden: !showGroupsList }">
         <div class="list-header">
           <h3>Grupy</h3>
           <button @click="openCreateGroupModal" class="create-btn">+ Nowa grupa</button>
@@ -822,5 +827,125 @@ h1 {
   display: flex;
   justify-content: center;
   gap: 1rem;
+}
+
+.toggle-panel-btn {
+  display: none;
+  padding: 0.6rem 1rem;
+  margin-bottom: 1rem;
+  background: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.toggle-panel-btn:hover {
+  background: #1976D2;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .toggle-panel-btn {
+    display: block;
+    width: 100%;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  nav ul {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  nav ul li a {
+    font-size: 0.85rem;
+  }
+
+  .site-name {
+    font-size: 1.4rem;
+  }
+
+  .channels-wrapper {
+    position: relative;
+  }
+
+  .groups-list {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 10;
+    width: 280px;
+    max-width: 80%;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+  }
+
+  .groups-list.hidden {
+    transform: translateX(-100%);
+  }
+
+  .chat-window {
+    width: 100%;
+  }
+
+  .modal-content {
+    width: 95%;
+    padding: 1.5rem;
+  }
+
+  .modal-content h2 {
+    font-size: 1.3rem;
+  }
+
+  .form-group input[type="text"],
+  .form-group input[type="password"] {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .user-avatar {
+    width: 35px;
+    height: 35px;
+    font-size: 1.1rem;
+  }
+
+  .user-name {
+    font-size: 0.95rem;
+  }
+
+  .site-name {
+    font-size: 1.2rem;
+  }
+
+  .groups-list {
+    width: 260px;
+    max-width: 85%;
+  }
+
+  .message-input {
+    flex-direction: column;
+  }
+
+  .message-input input {
+    font-size: 16px;
+  }
+
+  .message-input button {
+    width: 100%;
+    padding: 0.75rem;
+  }
 }
 </style>

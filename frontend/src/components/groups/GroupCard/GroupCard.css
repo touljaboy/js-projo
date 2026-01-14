@@ -12,3 +12,16 @@
 .card--group .delete-btn {
   margin-top: 10px;
 }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .card--group img {
+    height: 200px;
+  }
+
+  .card--group .delete-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+  }
+}
