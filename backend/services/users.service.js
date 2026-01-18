@@ -43,7 +43,7 @@ exports.create = (user, password_hash, role = 'user') => {
 
     try {
         const info = db.prepare(
-            'INSERT INTO users (user, password_hash, role, created_at) VALUES (?, ?, ?, datetime("now"))'
+            "INSERT INTO users (user, password_hash, role, created_at) VALUES (?, ?, ?, datetime('now'))"
         ).run(user, password_hash, role || 'user');
 
         return exports.getOne(Number(info.lastInsertRowid));
