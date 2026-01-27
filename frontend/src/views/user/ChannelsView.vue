@@ -162,7 +162,6 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Modal tworzenia grupy -->
     <CreateGroupModal
       :show="showCreateGroupModal"
       :groupName="newGroupName"
@@ -175,7 +174,6 @@ onBeforeUnmount(() => {
       @close="closeCreateGroupModal"
     />
 
-    <!-- Modal weryfikacji hasła -->
     <div v-if="showPasswordPrompt" class="modal-overlay" @click.self="closePasswordPrompt">
       <div class="modal-content">
         <h2>Grupa prywatna</h2>

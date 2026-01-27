@@ -126,8 +126,7 @@ input {
     margin-top: 5px;
 }
 
-/* Responsive Design */
-/* Tablets and smaller */
+
 @media (max-width: 768px) {
     .container {
         max-width: 100%;

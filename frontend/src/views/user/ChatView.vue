@@ -77,9 +77,7 @@ const fetchConversationMessages = async (convId, loadMore = false, onlyNew = fal
     
     // Jeśli sprawdzamy tylko nowe wiadomości (auto-refresh)
     if (onlyNew && newestMessageId.value) {
-      params.set('limit', 100) // Zwiększ limit dla nowych
-      // Nie używamy after_id bo backend tego nie obsługuje
-      // Zamiast tego porównamy message_id po pobraniu
+      params.set('limit', 100) 
     }
     
     const response = await authFetch(`${API_URL}/messages?${params}`)
@@ -105,7 +103,6 @@ const fetchConversationMessages = async (convId, loadMore = false, onlyNew = fal
           messages.value = [...data.messages, ...messages.value]
           console.log(`Dodano ${data.messages.length} starszych wiadomości. Przed: ${beforeCount}, Po: ${messages.value.length}`)
           
-          // Aktualizuj metadata dla load more
           hasMoreMessages.value = data.pagination?.hasMore || false
           oldestMessageId.value = data.pagination?.oldestMessageId || null
         } else {
@@ -130,7 +127,6 @@ const fetchConversationMessages = async (convId, loadMore = false, onlyNew = fal
           totalMessages: messages.value.length
         })
       } else {
-        // Fallback dla starej struktury (bez paginacji)
         messages.value = data
         hasMoreMessages.value = false
       }
@@ -145,12 +141,10 @@ const fetchConversationMessages = async (convId, loadMore = false, onlyNew = fal
   }
 }
 
-// Wybierz konwersację
 const selectConversation = async (conv) => {
   selectedConversation.value = conv
   await fetchConversationMessages(conv.id)
   
-  // Uruchom auto-odświeżanie wiadomości
   if (messagesInterval) {
     clearInterval(messagesInterval)
   }
