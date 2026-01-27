@@ -1,23 +1,24 @@
-// -----------------------------
-// GROUP SERVICE (MOCK DB)
-// -----------------------------
+
 
 const db = require('../db');
 
-// -----------------------------------------
-// GET ALL
-// -----------------------------------------
-exports.getAll = () => {
+
+exports.getAll = (options = {}) => {
+    const { limit = 100, offset = 0 } = options;
+    
+    // Walidacja
+    const safeLimit = Math.min(Math.max(1, parseInt(limit) || 100), 100);
+    const safeOffset = Math.max(0, parseInt(offset) || 0);
+    
     return db.prepare(`
     SELECT id, name, is_public, password, creator_id, created_at
     FROM groups
     ORDER BY id
-  `).all();
+    LIMIT ? OFFSET ?
+  `).all(safeLimit, safeOffset);
 };
 
-// -----------------------------------------
-// GET ONE BY ID
-// -----------------------------------------
+
 exports.getOne = (id) => {
     const row = db.prepare(`
     SELECT id, name, is_public, password, creator_id, created_at
@@ -31,9 +32,7 @@ exports.getOne = (id) => {
     return row;
 };
 
-// -----------------------------------------
-// CREATE GROUP
-// -----------------------------------------
+
 exports.create = ({ id, name, is_public = true, password = null, creator_id }) => {
     if (!name || creator_id == null) {
         throw { status: 400, message: "Brak wymaganych pól: name, creator_id" };
@@ -70,14 +69,12 @@ exports.create = ({ id, name, is_public = true, password = null, creator_id }) =
 
 
 
-// -----------------------------------------
-// PUT (FULL REPLACE)
-// -----------------------------------------
+
 exports.replace = (id, name, is_public, password) => {
     // 1) czy istnieje
     const current = exports.getOne(id);
 
-    // 2) walidacje jak wcześniej
+    // 2) walidacje
     if (!name || is_public === undefined) {
         throw { status: 400, message: 'Brak wymaganych pól: name, is_public' };
     }
@@ -105,7 +102,7 @@ exports.replace = (id, name, is_public, password) => {
         throw e;
     }
 
-    // 4) zwrot (bez password, jak wcześniej)
+    // 4) zwrot 
     const updated = exports.getOne(id);
     const { password: _pw, ...safe } = updated;
     return safe;
@@ -113,18 +110,14 @@ exports.replace = (id, name, is_public, password) => {
 
 
 
-// -----------------------------------------
-// DELETE GROUP
-// -----------------------------------------
+
 exports.remove = (id) => {
     const current = exports.getOne(id);
     db.prepare('DELETE FROM groups WHERE id = ?').run(id);
     return current;
 };
 
-// -----------------------------------------
-// VERIFY GROUP PASSWORD
-// -----------------------------------------
+
 exports.verifyPassword = (id, password) => {
     const group = exports.getOne(id);
 

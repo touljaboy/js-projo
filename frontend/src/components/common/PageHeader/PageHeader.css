@@ -19,7 +19,7 @@
   width: min(320px, 100%);
 }
 
-/* Mobile responsive */
+
 @media (max-width: 768px) {
   .page-header__title {
     font-size: 1.5rem;

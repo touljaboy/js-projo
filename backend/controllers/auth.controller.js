@@ -1,6 +1,4 @@
-// -----------------------------
-// AUTH CONTROLLER
-// -----------------------------
+
 
 const authService = require('../services/auth.service');
 

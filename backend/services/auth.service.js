@@ -1,10 +1,8 @@
-// -----------------------------
-// AUTH SERVICE
-// -----------------------------
+
 
 const usersService = require('./users.service');
 
-// Mock session storage (w produkcji użyj Redis lub bazy danych)
+// Mock session storage 
 const sessions = new Map();
 
 exports.register = (username, password, email, pesel) => {
@@ -48,7 +46,7 @@ exports.login = (username, password) => {
         throw error;
     }
 
-    // Generuj prosty token sesji (w produkcji użyj JWT)
+    // Generuj prosty token sesji 
     const sessionToken = `session_${user.id}_${Date.now()}`;
     sessions.set(sessionToken, { userId: user.id, username: user.user, role: user.role });
 

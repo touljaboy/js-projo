@@ -1,6 +1,4 @@
-// -----------------------------
-// USER CONTROLLER
-// -----------------------------
+
 
 const usersService = require('../services/users.service');
 
@@ -14,7 +12,8 @@ const handleError = (res, error) => {
 // GET /v1/users
 exports.getAll = (req, res) => {
     try {
-        const allUsers = usersService.getAll();
+        const { limit, offset } = req.query;
+        const allUsers = usersService.getAll({ limit, offset });
         res.status(200).json(allUsers);
     } catch (error) {
         handleError(res, error);
@@ -28,7 +27,7 @@ exports.getOne = (req, res) => {
         const user = usersService.getOne(userId);
         res.status(200).json(user);
     } catch (error) {
-        handleError(res, error); // Handles 404 from service
+        handleError(res, error); 
     }
 };
 
@@ -40,7 +39,7 @@ exports.create = (req, res) => {
         const newUser = usersService.create(user, password_hash, role);
         res.status(201).json(newUser); // 201 Created
     } catch (error) {
-        handleError(res, error); // Handles 400 from service
+        handleError(res, error); 
     }
 };
 
@@ -58,7 +57,7 @@ exports.patch = (req, res) => {
         const updatedUser = usersService.update(userId, newUserName, newPass, newRole);
         res.status(200).json(updatedUser);
     } catch (error) {
-        handleError(res, error); // Handles 404 from service
+        handleError(res, error); 
     }
 };
 
@@ -69,6 +68,6 @@ exports.delete = (req, res) => {
         const deletedUser = usersService.remove(userId);
         res.status(200).json({ message: "Użytkownik usunięty.", deleted: deletedUser });
     } catch (error) {
-        handleError(res, error); // Handles 404 from service
+        handleError(res, error); 
     }
 };

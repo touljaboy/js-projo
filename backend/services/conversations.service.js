@@ -1,7 +1,7 @@
 const db = require('../db');
 
 
-// --- FILTER HELPERS ---
+
 
 function filterByUserA(list, userAId) {
   const result = list.filter(conv => conv.user_a_id === parseInt(userAId));
@@ -24,13 +24,19 @@ function filterByUserB(list, userBId) {
 }
 
 
-// --- GET ALL ---
-exports.getAll = (user_a_id, user_b_id) => {
+
+exports.getAll = (user_a_id, user_b_id, options = {}) => {
+  const { limit = 100, offset = 0 } = options;
+  
+  const safeLimit = Math.min(Math.max(1, parseInt(limit) || 100), 100);
+  const safeOffset = Math.max(0, parseInt(offset) || 0);
+  
   let rows = db.prepare(`
     SELECT id, user_a_id, user_b_id, last_message_at
     FROM conversations
     ORDER BY id
-  `).all();
+    LIMIT ? OFFSET ?
+  `).all(safeLimit, safeOffset);
 
   // zachowujemy dokładnie zachowanie z mocka: filtr po A, potem po B, i 404 jeśli pusto
   if (user_a_id) {
@@ -51,7 +57,7 @@ exports.getAll = (user_a_id, user_b_id) => {
 };
 
 
-// --- GET ONE ---
+
 exports.getOne = (id) => {
   return db.prepare(`
     SELECT id, user_a_id, user_b_id, last_message_at
@@ -61,7 +67,7 @@ exports.getOne = (id) => {
 };
 
 
-// --- CREATE ---
+
 exports.create = (user_a_id, user_b_id) => {
   if (!user_a_id || !user_b_id) {
     throw { status: 400, message: "Brak wymaganych pól: user_a_id, user_b_id." };
@@ -95,7 +101,7 @@ exports.create = (user_a_id, user_b_id) => {
 };
 
 
-// --- UPDATE ---
+
 exports.update = (id, last_message_at) => {
   const conv = exports.getOne(parseInt(id));
   if (!conv) {
@@ -115,7 +121,7 @@ exports.update = (id, last_message_at) => {
 };
 
 
-// --- DELETE ---
+
 exports.remove = (id) => {
   const info = db.prepare(`DELETE FROM conversations WHERE id = ?`).run(parseInt(id));
   if (info.changes === 0) {
@@ -123,9 +129,7 @@ exports.remove = (id) => {
   }
 };
 
-// -----------------------------------------
-// PUT (FULL REPLACE)
-// -----------------------------------------
+
 exports.replace = (id, data) => {
   const conv = exports.getOne(parseInt(id));
   if (!conv) return null;

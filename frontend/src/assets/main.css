@@ -1,4 +1,4 @@
-/* src/assets/main.css */
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -14,7 +14,7 @@ body {
 }
 
 #app {
-  /* Usuwamy domyślne ograniczenia Vue */
+
   width: 100%;
   max-width: 100%;
   padding: 0;

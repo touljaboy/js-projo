@@ -1,6 +1,4 @@
-// -----------------------------
-// GROUP CONTROLLER
-// -----------------------------
+
 
 const groupsService = require('../services/groups.service');
 
@@ -14,7 +12,8 @@ const handleError = (res, error) => {
 // GET /v1/groups
 exports.getGroups = (req, res) => {
     try {
-        const allGroups = groupsService.getAll();
+        const { limit, offset } = req.query;
+        const allGroups = groupsService.getAll({ limit, offset });
         res.status(200).json(allGroups);
     } catch (error) {
         handleError(res, error);
@@ -28,7 +27,7 @@ exports.getGroupById = (req, res) => {
         const group = groupsService.getOne(id);
         res.status(200).json(group);
     } catch (error) {
-        handleError(res, error); // Handles 404 from service
+        handleError(res, error); 
     }
 };
 
@@ -52,11 +51,11 @@ exports.replaceGroup = (req, res) => {
     const { name, is_public, password } = req.body;
 
     try {
-        // Note: The replace function handles the required field check and logic validation.
+
         const updatedGroup = groupsService.replace(id, name, is_public, password);
         res.status(200).json(updatedGroup);
     } catch (error) {
-        handleError(res, error); // Handles 400 or 404 from service
+        handleError(res, error); 
     }
 };
 
@@ -67,7 +66,7 @@ exports.deleteGroup = (req, res) => {
         const deletedGroup = groupsService.remove(id);
         res.status(200).json({ message: "Grupa usunięta.", deleted: deletedGroup });
     } catch (error) {
-        handleError(res, error); // Handles 404 from service
+        handleError(res, error); 
     }
 };
 

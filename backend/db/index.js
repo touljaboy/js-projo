@@ -11,7 +11,7 @@ db.pragma('foreign_keys = ON');
 
 applySchema(db);
 
-// Seed tylko w dev (zalecane)
+
 if (process.env.NODE_ENV !== 'production') {
   seed(db);
 }

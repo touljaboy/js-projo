@@ -1,6 +1,4 @@
-// ----------------------
-// !SERVER!
-// ----------------------
+
 
 const express = require('express');
 const cors = require('cors');
@@ -9,7 +7,6 @@ const app = express();
 const PORT = 3000;
 
 app.use(cors({ origin: 'http://localhost:5173' })); 
-// (na devie możesz też dać po prostu app.use(cors()); )
 
 app.use(express.json());
 

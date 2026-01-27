@@ -1,18 +1,30 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useAuth } from '@/composables/useAuth'
+import { useChannels } from '@/composables/useChannels'
 import { useRouter } from 'vue-router'
+import GroupsList from '@/components/channels/GroupsList.vue'
+import ChatWindow from '@/components/channels/ChatWindow.vue'
+import CreateGroupModal from '@/components/channels/CreateGroupModal.vue'
 
 const router = useRouter()
 const { currentUser, logout, isAuthenticated } = useAuth()
+const {
+  searchGroups,
+  selectedGroup,
+  messages,
+  newMessage,
+  filteredGroups,
+  hasMoreMessages,
+  selectGroup,
+  sendMessage,
+  createGroup,
+  getUserName,
+  loadOlderMessages,
+  initialize,
+  cleanup
+} = useChannels()
 
-const searchGroups = ref('')
-const searchUsers = ref('')
-const groups = ref([])
-const users = ref([])
-const selectedGroup = ref(null)
-const messages = ref([])
-const newMessage = ref('')
 const showCreateGroupModal = ref(false)
 const newGroupName = ref('')
 const newGroupIsPublic = ref(true)
@@ -21,151 +33,33 @@ const showPasswordPrompt = ref(false)
 const passwordInput = ref('')
 const pendingGroup = ref(null)
 const showGroupsList = ref(true)
-let messagesInterval = null
 
-const API_URL = 'http://localhost:3000/v1'
-
-// Pobierz grupy
-const fetchGroups = async () => {
-  try {
-    const response = await fetch(`${API_URL}/groups`)
-    if (response.ok) {
-      groups.value = await response.json()
-    }
-  } catch (error) {
-    console.error('Błąd pobierania grup:', error)
-  }
-}
-
-// Pobierz użytkowników
-const fetchUsers = async () => {
-  try {
-    const response = await fetch(`${API_URL}/users`)
-    if (response.ok) {
-      users.value = await response.json()
-      console.log('Pobrano użytkowników:', users.value.length, users.value)
-    } else {
-      console.error('Błąd odpowiedzi przy pobieraniu użytkowników:', response.status)
-    }
-  } catch (error) {
-    console.error('Błąd pobierania użytkowników:', error)
-  }
-}
-
-// Pobierz wiadomości grupy
-const fetchGroupMessages = async (groupId) => {
-  try {
-    const response = await fetch(`${API_URL}/messages`)
-    if (response.ok) {
-      const allMessages = await response.json()
-      // Filtruj wiadomości dla wybranej grupy (backend używa receiver_group_id)
-      const groupMessages = allMessages.filter(m => m.receiver_group_id === groupId)
-      
-      // Sprawdź czy są nowi użytkownicy w wiadomościach
-      const userIds = new Set(groupMessages.map(m => m.sender_id))
-      const hasUnknownUsers = Array.from(userIds).some(id => 
-        !users.value.find(u => u.id === id)
-      )
-      
-      // Jeśli są nowi użytkownicy, odśwież listę
-      if (hasUnknownUsers) {
-        await fetchUsers()
-      }
-      
-      messages.value = groupMessages
-    }
-  } catch (error) {
-    console.error('Błąd pobierania wiadomości:', error)
-  }
-}
-
-// Pomocnicze funkcje dla zarządzania dostępem do grup
-const getVerifiedGroups = () => {
-  const stored = localStorage.getItem('verifiedGroups')
-  return stored ? JSON.parse(stored) : []
-}
-
-const addVerifiedGroup = (groupId) => {
-  const verified = getVerifiedGroups()
-  if (!verified.includes(groupId)) {
-    verified.push(groupId)
-    localStorage.setItem('verifiedGroups', JSON.stringify(verified))
-  }
-}
-
-const hasVerifiedAccess = (groupId) => {
-  return getVerifiedGroups().includes(groupId)
-}
-
-// Wybierz grupę
-const selectGroup = async (group) => {
-  // Jeśli grupa jest prywatna, sprawdź czy użytkownik jest twórcą lub ma już dostęp
-  if (!group.is_public) {
-    // Twórca grupy ma automatyczny dostęp
-    const isCreator = group.creator_id === currentUser.value?.id
-    // Sprawdź czy użytkownik już wcześniej zweryfikował dostęp
-    const hasAccess = hasVerifiedAccess(group.id)
-    
-    if (!isCreator && !hasAccess) {
-      // Pokaż prompt o hasło
-      pendingGroup.value = group
-      passwordInput.value = ''
-      showPasswordPrompt.value = true
-      return
-    }
-  }
+const handleSelectGroup = async (group) => {
+  const result = await selectGroup(group)
   
-  // Grupa publiczna lub użytkownik ma dostęp - można wejść od razu
-  await joinGroup(group)
-}
-
-const joinGroup = async (group) => {
-  selectedGroup.value = group
-  await fetchGroupMessages(group.id)
-  
-  // Uruchom auto-odświeżanie wiadomości
-  if (messagesInterval) {
-    clearInterval(messagesInterval)
+  if (result.needsPassword) {
+    pendingGroup.value = group
+    showPasswordPrompt.value = true
+    passwordInput.value = ''
   }
-  messagesInterval = setInterval(() => {
-    if (selectedGroup.value) {
-      fetchGroupMessages(selectedGroup.value.id)
-    }
-  }, 3000) // Odśwież co 3 sekundy
 }
 
-const verifyAndJoinGroup = async () => {
-  if (!pendingGroup.value || !passwordInput.value) {
-    alert('Podaj hasło')
+const verifyPassword = async () => {
+  if (!passwordInput.value.trim() || !pendingGroup.value) {
+    alert('Wprowadź hasło')
     return
   }
 
-  try {
-    const response = await fetch(`${API_URL}/groups/${pendingGroup.value.id}/verify`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        password: passwordInput.value,
-      }),
-    })
+  const isValid = await useChannels().verifyGroupPassword(
+    pendingGroup.value.id,
+    passwordInput.value
+  )
 
-    if (response.ok) {
-      // Zapisz dostęp do grupy w localStorage
-      addVerifiedGroup(pendingGroup.value.id)
-      
-      showPasswordPrompt.value = false
-      await joinGroup(pendingGroup.value)
-      pendingGroup.value = null
-      passwordInput.value = ''
-    } else {
-      const errorData = await response.json()
-      alert('Błąd: ' + (errorData.error || 'Nieprawidłowe hasło'))
-    }
-  } catch (error) {
-    console.error('Błąd weryfikacji hasła:', error)
-    alert('Błąd połączenia z serwerem')
+  if (isValid) {
+    showPasswordPrompt.value = false
+    await selectGroup(pendingGroup.value)
+  } else {
+    alert('Nieprawidłowe hasło')
   }
 }
 
@@ -175,38 +69,6 @@ const closePasswordPrompt = () => {
   passwordInput.value = ''
 }
 
-// Wyślij wiadomość
-const sendMessage = async () => {
-  if (!newMessage.value.trim() || !selectedGroup.value) return
-
-  try {
-    const response = await fetch(`${API_URL}/messages`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        sender_id: currentUser.value?.id || 1,
-        receiver_group_id: selectedGroup.value.id,
-        message_content: newMessage.value,
-      }),
-    })
-
-    if (response.ok) {
-      newMessage.value = ''
-      await fetchGroupMessages(selectedGroup.value.id)
-    } else {
-      const errorData = await response.json()
-      console.error('Błąd wysyłania wiadomości:', errorData)
-      alert('Błąd wysyłania wiadomości: ' + (errorData.error || 'Nieznany błąd'))
-    }
-  } catch (error) {
-    console.error('Błąd wysyłania wiadomości:', error)
-    alert('Błąd połączenia z serwerem')
-  }
-}
-
-// Stwórz nową grupę
 const openCreateGroupModal = () => {
   newGroupName.value = ''
   newGroupIsPublic.value = true
@@ -218,104 +80,32 @@ const closeCreateGroupModal = () => {
   showCreateGroupModal.value = false
 }
 
-const createGroup = async () => {
-  if (!newGroupName.value.trim()) {
-    alert('Podaj nazwę grupy')
-    return
-  }
-
-  if (!newGroupIsPublic.value && !newGroupPassword.value.trim()) {
-    alert('Grupa prywatna wymaga hasła')
-    return
-  }
-
-  try {
-    const response = await fetch(`${API_URL}/groups`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: newGroupName.value,
-        is_public: newGroupIsPublic.value,
-        password: newGroupIsPublic.value ? null : newGroupPassword.value,
-        creator_id: currentUser.value?.id,
-      }),
-    })
-
-    if (response.ok) {
-      const newGroup = await response.json()
-      // Jeśli to grupa prywatna, zapisz ją jako zweryfikowaną (twórca ma automatyczny dostęp)
-      if (!newGroup.is_public) {
-        addVerifiedGroup(newGroup.id)
-      }
-      await fetchGroups()
-      closeCreateGroupModal()
-    } else {
-      const errorData = await response.json()
-      alert('Błąd tworzenia grupy: ' + (errorData.error || 'Nieznany błąd'))
-    }
-  } catch (error) {
-    console.error('Błąd tworzenia grupy:', error)
-    alert('Błąd połączenia z serwerem')
+const handleCreateGroup = async () => {
+  const success = await createGroup({
+    name: newGroupName.value,
+    isPublic: newGroupIsPublic.value,
+    password: newGroupPassword.value
+  })
+  
+  if (success) {
+    closeCreateGroupModal()
   }
 }
-
-// Zwróć nazwę użytkownika na podstawie ID
-const getUserName = (userId) => {
-  if (!users.value || users.value.length === 0) {
-    console.warn('Lista użytkowników jest pusta!')
-    return `User ${userId}`
-  }
-  const user = users.value.find(u => u.id === userId)
-  if (!user) {
-    console.warn(`Nie znaleziono użytkownika o ID ${userId}`, 'Dostępni użytkownicy:', users.value)
-    return `User ${userId}`
-  }
-  return user.user
-}
-
-const filteredGroups = computed(() =>
-  groups.value.filter(g =>
-    g.name.toLowerCase().includes(searchGroups.value.toLowerCase())
-  )
-)
-
-const filteredUsers = computed(() =>
-  users.value.filter(u =>
-    u.user.toLowerCase().includes(searchUsers.value.toLowerCase())
-  )
-)
 
 const handleLogout = () => {
   logout()
 }
-
-let groupsRefreshInterval = null
 
 onMounted(async () => {
   if (!isAuthenticated()) {
     router.push('/login')
     return
   }
-  // Najpierw pobierz użytkowników, potem grupy
-  await fetchUsers()
-  await fetchGroups()
-  
-  // Automatyczne odświeżanie listy grup co 5 sekund
-  groupsRefreshInterval = setInterval(() => {
-    fetchGroups()
-  }, 5000)
+  await initialize()
 })
 
 onBeforeUnmount(() => {
-  // Wyczyść interwały przy opuszczaniu komponentu
-  if (messagesInterval) {
-    clearInterval(messagesInterval)
-  }
-  if (groupsRefreshInterval) {
-    clearInterval(groupsRefreshInterval)
-  }
+  cleanup()
 })
 </script>
 
@@ -344,54 +134,28 @@ onBeforeUnmount(() => {
     </button>
 
     <div class="channels-wrapper">
-      <!-- Lista grup -->
-      <div class="groups-list" :class="{ hidden: !showGroupsList }">
-        <div class="list-header">
-          <h3>Grupy</h3>
-          <button @click="openCreateGroupModal" class="create-btn">+ Nowa grupa</button>
-        </div>
-        <input
-          type="search"
-          v-model="searchGroups"
-          placeholder="Szukaj grup..."
-          aria-label="Szukaj grup"
-        />
-        <ul>
-          <li 
-            v-for="group in filteredGroups" 
-            :key="group.id"
-            @click="selectGroup(group)"
-            :class="{ active: selectedGroup?.id === group.id }"
-          >
-            <div class="avatar">#</div>
-            <span>{{ group.name }}</span>
-          </li>
-        </ul>
-      </div>
+      <GroupsList
+        v-if="showGroupsList"
+        :groups="filteredGroups"
+        :selectedGroup="selectedGroup"
+        :searchQuery="searchGroups"
+        @update:searchQuery="searchGroups = $event"
+        @select="handleSelectGroup"
+        @create="openCreateGroupModal"
+      />
 
-      <!-- Okno czatu -->
       <div class="chat-window">
-        <div v-if="selectedGroup" class="chat-content">
-          <div class="chat-header">
-            <h3># {{ selectedGroup.name }}</h3>
-          </div>
-          
-          <div class="messages-container">
-            <div v-for="msg in messages" :key="msg.message_id" class="message">
-              <strong>{{ getUserName(msg.sender_id) }}:</strong> {{ msg.message_content }}
-            </div>
-          </div>
-
-          <div class="message-input">
-            <input
-              v-model="newMessage"
-              @keyup.enter="sendMessage"
-              type="text"
-              placeholder="Napisz wiadomość..."
-            />
-            <button @click="sendMessage">Wyślij</button>
-          </div>
-        </div>
+        <ChatWindow
+          v-if="selectedGroup"
+          :group="selectedGroup"
+          :messages="messages"
+          :newMessage="newMessage"
+          :getUserName="getUserName"
+          :hasMoreMessages="hasMoreMessages"
+          @update:newMessage="newMessage = $event"
+          @send="sendMessage"
+          @loadMore="loadOlderMessages"
+        />
         <div v-else class="no-selection">
           <p>Wybierz grupę, aby zobaczyć wiadomości</p>
         </div>
@@ -399,57 +163,33 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Modal tworzenia grupy -->
-    <div v-if="showCreateGroupModal" class="modal-overlay" @click="closeCreateGroupModal">
-      <div class="modal-content" @click.stop>
-        <h2>Utwórz nową grupę</h2>
-        
-        <form @submit.prevent="createGroup">
-          <div class="form-group">
-            <label>Nazwa grupy:</label>
-            <input v-model="newGroupName" type="text" required placeholder="Wpisz nazwę grupy" />
-          </div>
+    <CreateGroupModal
+      :show="showCreateGroupModal"
+      :groupName="newGroupName"
+      :isPublic="newGroupIsPublic"
+      :password="newGroupPassword"
+      @update:groupName="newGroupName = $event"
+      @update:isPublic="newGroupIsPublic = $event"
+      @update:password="newGroupPassword = $event"
+      @submit="handleCreateGroup"
+      @close="closeCreateGroupModal"
+    />
 
-          <div class="form-group">
-            <label class="radio-label">
-              <input type="radio" v-model="newGroupIsPublic" :value="true" />
-              Publiczna (każdy może dołączyć)
-            </label>
-            <label class="radio-label">
-              <input type="radio" v-model="newGroupIsPublic" :value="false" />
-              Prywatna (wymaga hasła)
-            </label>
-          </div>
-
-          <div v-if="!newGroupIsPublic" class="form-group">
-            <label>Hasło:</label>
-            <input v-model="newGroupPassword" type="password" required placeholder="Wpisz hasło grupy" />
-          </div>
-
-          <div class="modal-buttons">
-            <button type="button" @click="closeCreateGroupModal" class="btn-cancel">Anuluj</button>
-            <button type="submit" class="btn-create">Utwórz</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Modal weryfikacji hasła grupy -->
-    <div v-if="showPasswordPrompt" class="modal-overlay" @click="closePasswordPrompt">
-      <div class="modal-content" @click.stop>
-        <h2>🔒 Grupa prywatna</h2>
-        <p>Grupa "{{ pendingGroup?.name }}" jest prywatna. Podaj hasło aby dołączyć.</p>
-        
-        <form @submit.prevent="verifyAndJoinGroup">
-          <div class="form-group">
-            <label>Hasło:</label>
-            <input v-model="passwordInput" type="password" required placeholder="Wpisz hasło grupy" autofocus />
-          </div>
-
-          <div class="modal-buttons">
-            <button type="button" @click="closePasswordPrompt" class="btn-cancel">Anuluj</button>
-            <button type="submit" class="btn-create">Dołącz</button>
-          </div>
-        </form>
+    <!-- Modal weryfikacji hasła -->
+    <div v-if="showPasswordPrompt" class="modal-overlay" @click.self="closePasswordPrompt">
+      <div class="modal-content">
+        <h2>Grupa prywatna</h2>
+        <p>Ta grupa wymaga hasła. Wprowadź hasło, aby uzyskać dostęp.</p>
+        <input
+          v-model="passwordInput"
+          @keyup.enter="verifyPassword"
+          type="password"
+          placeholder="Hasło"
+        />
+        <div class="modal-actions">
+          <button @click="verifyPassword" class="btn-primary">OK</button>
+          <button @click="closePasswordPrompt" class="btn-secondary">Anuluj</button>
+        </div>
       </div>
     </div>
   </div>
@@ -556,6 +296,8 @@ h1 {
   gap: 1rem;
   flex: 1;
   min-height: 500px;
+  max-height: 600px;
+  overflow: hidden;
 }
 
 .groups-list {
@@ -646,75 +388,16 @@ h1 {
   background: white;
   display: flex;
   flex-direction: column;
-}
-
-.chat-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.chat-header {
-  padding: 1rem;
-  border-bottom: 1px solid #ddd;
-  background: #f5f5f5;
-}
-
-.chat-header h3 {
-  margin: 0;
-}
-
-.messages-container {
-  flex: 1;
-  padding: 1rem;
-  overflow-y: auto;
-  max-height: 400px;
-}
-
-.message {
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-  background: #f0f0f0;
-  border-radius: 4px;
-}
-
-.message strong {
-  color: #2196F3;
-}
-
-.message-input {
-  display: flex;
-  gap: 0.5rem;
-  padding: 1rem;
-  border-top: 1px solid #ddd;
-}
-
-.message-input input {
-  flex: 1;
-  padding: 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.message-input button {
-  padding: 0.6rem 1.2rem;
-  background: #2196F3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.message-input button:hover {
-  background: #1976D2;
+  overflow: hidden;
 }
 
 .no-selection {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  flex: 1;
   color: #999;
+  font-size: 1.1rem;
 }
 
 /* Modal styles */

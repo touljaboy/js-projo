@@ -1,6 +1,4 @@
-// -----------------------------
-// MESSAGE CONTROLLER
-// -----------------------------
+
 
 const messagesService = require('../services/messages.service');
 
@@ -14,8 +12,19 @@ const handleError = (res, error) => {
 // GET /v1/messages
 exports.getMessages = (req, res) => {
     try {
-        const allMessages = messagesService.getAll();
-        res.status(200).json(allMessages);
+        // Pobierz parametry query
+        const { limit, offset, conversation_id, receiver_group_id, orderBy, before_id } = req.query;
+        
+        const result = messagesService.getAll({
+            limit,
+            offset,
+            conversation_id,
+            receiver_group_id,
+            orderBy,
+            before_id
+        });
+        
+        res.status(200).json(result);
     } catch (error) {
         handleError(res, error);
     }
@@ -28,7 +37,7 @@ exports.getMessageById = (req, res) => {
         const message = messagesService.getOne(messageId);
         res.status(200).json(message);
     } catch (error) {
-        handleError(res, error); // Handles 404 from service
+        handleError(res, error); 
     }
 };
 
@@ -39,7 +48,7 @@ exports.createMessage = (req, res) => {
         const newMessage = messagesService.create(req.body);
         res.status(201).json(newMessage); // 201 Created
     } catch (error) {
-        handleError(res, error); // Handles 400 from service
+        handleError(res, error); 
     }
 };
 
@@ -53,7 +62,7 @@ exports.patchMessage = (req, res) => {
         const updatedMessage = messagesService.update(messageId, { message_content });
         res.status(200).json(updatedMessage);
     } catch (error) {
-        handleError(res, error); // Handles 400 or 404 from service
+        handleError(res, error); 
     }
 };
 
@@ -64,6 +73,6 @@ exports.deleteMessage = (req, res) => {
         const deletedMessage = messagesService.remove(messageId);
         res.status(200).json({ message: "Wiadomość usunięta", deleted: deletedMessage });
     } catch (error) {
-        handleError(res, error); // Handles 404 from service
+        handleError(res, error); 
     }
 };

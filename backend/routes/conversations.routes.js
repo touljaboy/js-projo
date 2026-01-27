@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const convController = require('../controllers/conversations.controller');
+const { requireAuth } = require('../middleware/auth.middleware');
 
 const { validationResult } = require('express-validator');
 const {
@@ -17,12 +18,13 @@ const validate = (req, res, next) => {
   next();
 };
 
-router.get('/', getAllValidation, validate, convController.getAll);
-router.get('/:id', idParamValidation, validate, convController.getOne);
-router.post('/', createConversationValidation, validate, convController.create);
-router.patch('/:id', patchConversationValidation, validate, convController.update);
-router.delete('/:id', idParamValidation, validate, convController.remove);
-router.put('/:id', replaceConversationValidation, validate, convController.replace);
+// Wszystkie endpointy konwersacji wymagają autoryzacji
+router.get('/', requireAuth, getAllValidation, validate, convController.getAll);
+router.get('/:id', requireAuth, idParamValidation, validate, convController.getOne);
+router.post('/', requireAuth, createConversationValidation, validate, convController.create);
+router.patch('/:id', requireAuth, patchConversationValidation, validate, convController.update);
+router.delete('/:id', requireAuth, idParamValidation, validate, convController.remove);
+router.put('/:id', requireAuth, replaceConversationValidation, validate, convController.replace);
 
 
 module.exports = router;

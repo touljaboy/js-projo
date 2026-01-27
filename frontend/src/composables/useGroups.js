@@ -1,4 +1,5 @@
 import { ref, onMounted, computed } from 'vue'
+import { authFetch } from '@/utils/authFetch'
 
 const API_URL = 'http://localhost:3000/v1/groups'
 
@@ -12,8 +13,12 @@ export function useGroups() {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch(API_URL)
+      const response = await authFetch(API_URL)
       const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Błąd pobierania grup')
+      }
 
       groups.value = data.map((group) => ({
         ...group,
@@ -22,6 +27,7 @@ export function useGroups() {
       }))
     } catch (error) {
       console.error('Błąd pobierania grup:', error)
+      alert(error.message)
     }
   }
 
@@ -38,43 +44,46 @@ export function useGroups() {
 
   const addGroup = async (payload) => {
     try {
-      const response = await fetch(API_URL, {
+      const response = await authFetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: payload.name,
           is_public: payload.isPublic,
         }),
       })
 
+      const data = await response.json()
+      
       if (response.ok) {
-        const savedGroup = await response.json()
-
         groups.value.push({
-          ...savedGroup,
-          isPublic: savedGroup.is_public,
-          image: getImageUrl(savedGroup.name),
+          ...data,
+          isPublic: data.is_public,
+          image: getImageUrl(data.name),
         })
       } else {
-        const err = await response.json()
-        console.error('Błąd backendu:', err)
+        throw new Error(data.error || 'Błąd dodawania grupy')
       }
     } catch (error) {
       console.error('Błąd dodawania grupy:', error)
+      alert(error.message)
     }
   }
 
   const removeGroup = async (id) => {
     try {
-      const response = await fetch(`${API_URL}/${id}`, {
+      const response = await authFetch(`${API_URL}/${id}`, {
         method: 'DELETE',
       })
 
       if (response.ok) {
         groups.value = groups.value.filter((group) => group.id !== id)
+      } else {
+        const data = await response.json()
+        throw new Error(data.error || 'Błąd usuwania grupy')
       }
     } catch (error) {
       console.error('Błąd usuwania grupy:', error)
+      alert(error.message)
     }
   }
 

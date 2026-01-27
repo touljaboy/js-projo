@@ -1,10 +1,10 @@
 const convService = require('../services/conversations.service');
 
 exports.getAll = (req, res) => {
-  const { user_a_id, user_b_id } = req.query;
+  const { user_a_id, user_b_id, limit, offset } = req.query;
 
   try {
-    const result = convService.getAll(user_a_id, user_b_id);
+    const result = convService.getAll(user_a_id, user_b_id, { limit, offset });
     res.json(result);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });

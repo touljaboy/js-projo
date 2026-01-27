@@ -1,4 +1,5 @@
 import { ref, onMounted, computed } from 'vue'
+import { authFetch } from '@/utils/authFetch'
 
 const API_URL = 'http://localhost:3000/v1/convs'
 
@@ -9,9 +10,10 @@ export function useConversations() {
 
     const loadConversations = async () => {
     try {
-        const res = await fetch(API_URL)
-        if (!res.ok) throw new Error('Nie udało się pobrać rozmów.')
-        conversations.value = await res.json()
+        const res = await authFetch(API_URL)
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Nie udało się pobrać rozmów.')
+        conversations.value = data
     } catch (err) {
         console.error(err)
         alert(err.message)
@@ -33,9 +35,8 @@ export function useConversations() {
 
     const addConversation = async (payload) => {
     try {
-        const res = await fetch(API_URL, {
+        const res = await authFetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
         })
 
@@ -51,7 +52,7 @@ export function useConversations() {
 
     const removeConversation = async (id) => {
     try {
-        const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' })
+        const res = await authFetch(`${API_URL}/${id}`, { method: 'DELETE' })
         if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error || 'Błąd usuwania.')

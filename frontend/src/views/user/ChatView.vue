@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useRouter } from 'vue-router'
+import { authFetch } from '@/utils/authFetch'
 
 const router = useRouter()
 const { currentUser, logout, isAuthenticated } = useAuth()
@@ -13,6 +14,14 @@ const users = ref([])
 const selectedConversation = ref(null)
 const messages = ref([])
 const newMessage = ref('')
+const messagesContainer = ref(null)
+const hasMoreMessages = ref(false)
+const oldestMessageId = ref(null)
+const newestMessageId = ref(null)
+const isLoadingMore = ref(false)
+const showConversationsList = ref(true)
+const showUsersList = ref(true)
+const usersLimit = ref(10)
 let messagesInterval = null
 
 const API_URL = 'http://localhost:3000/v1'
@@ -20,13 +29,16 @@ const API_URL = 'http://localhost:3000/v1'
 // Pobierz konwersacje użytkownika
 const fetchConversations = async () => {
   try {
-    const response = await fetch(`${API_URL}/convs`)
+    const response = await authFetch(`${API_URL}/convs`)
     if (response.ok) {
       const allConvs = await response.json()
       // Filtruj konwersacje dla zalogowanego użytkownika
       conversations.value = allConvs.filter(
         c => c.user_a_id === currentUser.value?.id || c.user_b_id === currentUser.value?.id
       )
+    } else {
+      const error = await response.json()
+      console.error('Błąd pobierania konwersacji:', error)
     }
   } catch (error) {
     console.error('Błąd pobierania konwersacji:', error)
@@ -36,12 +48,13 @@ const fetchConversations = async () => {
 // Pobierz użytkowników
 const fetchUsers = async () => {
   try {
-    const response = await fetch(`${API_URL}/users`)
+    const response = await authFetch(`${API_URL}/users`)
     if (response.ok) {
       users.value = await response.json()
       console.log('Pobrano użytkowników:', users.value.length, users.value)
     } else {
-      console.error('Błąd odpowiedzi przy pobieraniu użytkowników:', response.status)
+      const error = await response.json()
+      console.error('Błąd odpowiedzi przy pobieraniu użytkowników:', response.status, error)
     }
   } catch (error) {
     console.error('Błąd pobierania użytkowników:', error)
@@ -49,28 +62,86 @@ const fetchUsers = async () => {
 }
 
 // Pobierz wiadomości konwersacji
-const fetchConversationMessages = async (convId) => {
+const fetchConversationMessages = async (convId, loadMore = false, onlyNew = false) => {
   try {
-    const response = await fetch(`${API_URL}/messages`)
+    const params = new URLSearchParams({
+      conversation_id: convId,
+      limit: 50
+    })
+    
+    // Jeśli ładujemy starsze wiadomości, użyj before_id
+    if (loadMore && oldestMessageId.value) {
+      params.append('before_id', oldestMessageId.value)
+      console.log('LoadMore - używam before_id:', oldestMessageId.value)
+    }
+    
+    // Jeśli sprawdzamy tylko nowe wiadomości (auto-refresh)
+    if (onlyNew && newestMessageId.value) {
+      params.set('limit', 100) // Zwiększ limit dla nowych
+      // Nie używamy after_id bo backend tego nie obsługuje
+      // Zamiast tego porównamy message_id po pobraniu
+    }
+    
+    const response = await authFetch(`${API_URL}/messages?${params}`)
     if (response.ok) {
-      const allMessages = await response.json()
-      const convMessages = allMessages.filter(m => m.conversation_id === convId)
+      const data = await response.json()
+      console.log('fetchConversationMessages response:', { loadMore, onlyNew, requestedBeforeId: oldestMessageId.value, receivedCount: data.messages?.length, receivedPagination: data.pagination })
       
-      // Sprawdź czy są nowi użytkownicy w wiadomościach
-      const userIds = new Set(convMessages.map(m => m.sender_id))
-      const hasUnknownUsers = Array.from(userIds).some(id => 
-        !users.value.find(u => u.id === id)
-      )
-      
-      // Jeśli są nowi użytkownicy, odśwież listę
-      if (hasUnknownUsers) {
-        await fetchUsers()
+      // Jeśli odpowiedź ma strukturę z paginacją
+      if (data.messages) {
+        const beforeCount = messages.value.length
+        
+        if (onlyNew) {
+          // Auto-refresh - dodaj tylko wiadomości nowsze niż mamy
+          const newMessages = data.messages.filter(msg => 
+            msg.message_id > (newestMessageId.value || 0)
+          )
+          if (newMessages.length > 0) {
+            messages.value = [...messages.value, ...newMessages]
+            console.log(`Auto-refresh: dodano ${newMessages.length} nowych wiadomości`)
+          }
+        } else if (loadMore) {
+          // Dodaj starsze wiadomości na początku
+          messages.value = [...data.messages, ...messages.value]
+          console.log(`Dodano ${data.messages.length} starszych wiadomości. Przed: ${beforeCount}, Po: ${messages.value.length}`)
+          
+          // Aktualizuj metadata dla load more
+          hasMoreMessages.value = data.pagination?.hasMore || false
+          oldestMessageId.value = data.pagination?.oldestMessageId || null
+        } else {
+          // Normalne ładowanie - zastąp
+          messages.value = data.messages
+          console.log(`Załadowano ${data.messages.length} wiadomości`)
+          
+          // Aktualizuj metadata dla normalnego ładowania
+          hasMoreMessages.value = data.pagination?.hasMore || false
+          oldestMessageId.value = data.pagination?.oldestMessageId || null
+        }
+        
+        // Aktualizuj newestMessageId (zawsze)
+        if (messages.value.length > 0) {
+          newestMessageId.value = Math.max(...messages.value.map(m => m.message_id))
+        }
+        
+        console.log('Zaktualizowano state:', { 
+          hasMoreMessages: hasMoreMessages.value, 
+          oldestMessageId: oldestMessageId.value,
+          newestMessageId: newestMessageId.value,
+          totalMessages: messages.value.length
+        })
+      } else {
+        // Fallback dla starej struktury (bez paginacji)
+        messages.value = data
+        hasMoreMessages.value = false
       }
-      
-      messages.value = convMessages
+    } else {
+      const error = await response.json()
+      console.error('Błąd pobierania wiadomości:', error)
     }
   } catch (error) {
     console.error('Błąd pobierania wiadomości:', error)
+  } finally {
+    isLoadingMore.value = false
   }
 }
 
@@ -85,7 +156,7 @@ const selectConversation = async (conv) => {
   }
   messagesInterval = setInterval(() => {
     if (selectedConversation.value) {
-      fetchConversationMessages(selectedConversation.value.id)
+      fetchConversationMessages(selectedConversation.value.id, false, true) // onlyNew = true
     }
   }, 3000) // Odśwież co 3 sekundy
 }
@@ -95,11 +166,8 @@ const sendMessage = async () => {
   if (!newMessage.value.trim() || !selectedConversation.value) return
 
   try {
-    const response = await fetch(`${API_URL}/messages`, {
+    const response = await authFetch(`${API_URL}/messages`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         conversation_id: selectedConversation.value.id,
         sender_id: currentUser.value?.id || 1,
@@ -129,11 +197,8 @@ const startConversation = async (user) => {
   }
 
   try {
-    const response = await fetch(`${API_URL}/convs`, {
+    const response = await authFetch(`${API_URL}/convs`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         user_a_id: currentUser.value?.id,
         user_b_id: user.id,
@@ -175,6 +240,54 @@ const getConversationName = (conv) => {
   return getUserName(otherUserId)
 }
 
+// Załaduj starsze wiadomości
+const loadOlderMessages = async () => {
+  console.log('loadOlderMessages wywołana:', { 
+    hasConv: !!selectedConversation.value, 
+    isLoading: isLoadingMore.value, 
+    hasMore: hasMoreMessages.value,
+    oldestId: oldestMessageId.value 
+  })
+  if (!selectedConversation.value || isLoadingMore.value || !hasMoreMessages.value) return
+  
+  // Zapamiętaj wysokość przed załadowaniem
+  const containerBefore = messagesContainer.value?.scrollHeight || 0
+  
+  isLoadingMore.value = true
+  await fetchConversationMessages(selectedConversation.value.id, true)
+  
+  // Po załadowaniu - dostosuj scroll żeby user był w tym samym miejscu wizualnie
+  nextTick(() => {
+    if (messagesContainer.value) {
+      const containerAfter = messagesContainer.value.scrollHeight
+      const heightDiff = containerAfter - containerBefore
+      messagesContainer.value.scrollTop = heightDiff
+      console.log('Dostosowano scroll:', { containerBefore, containerAfter, heightDiff, newScrollTop: heightDiff })
+    }
+  })
+}
+
+// Przewiń do dołu kontenera wiadomości
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+    }
+  })
+}
+
+// Obserwuj zmiany w wiadomościach - scrolluj tylko przy nowych (nie przy load more)
+let previousMessageCount = 0
+watch(() => messages.value.length, (newCount) => {
+  const isNewMessage = newCount > previousMessageCount
+  previousMessageCount = newCount
+  
+  // Scrolluj tylko jeśli to nowe wiadomości (nie "load more")
+  if (isNewMessage && !isLoadingMore.value) {
+    scrollToBottom()
+  }
+})
+
 const filteredConversations = computed(() =>
   conversations.value.filter(c => {
     const name = getConversationName(c)
@@ -182,12 +295,30 @@ const filteredConversations = computed(() =>
   })
 )
 
-const filteredUsers = computed(() =>
-  users.value.filter(u =>
+const filteredUsers = computed(() => {
+  const filtered = users.value.filter(u =>
     u.user.toLowerCase().includes(searchUsers.value.toLowerCase()) &&
     u.id !== currentUser.value?.id
   )
-)
+  return filtered.slice(0, usersLimit.value)
+})
+
+const hasMoreUsers = computed(() => {
+  const totalFiltered = users.value.filter(u =>
+    u.user.toLowerCase().includes(searchUsers.value.toLowerCase()) &&
+    u.id !== currentUser.value?.id
+  ).length
+  return totalFiltered > usersLimit.value
+})
+
+const loadMoreUsers = () => {
+  usersLimit.value += 10
+}
+
+// Resetuj limit gdy zmienia się wyszukiwanie
+watch(searchUsers, () => {
+  usersLimit.value = 10
+})
 
 const handleLogout = () => {
   logout()
@@ -231,9 +362,18 @@ onBeforeUnmount(() => {
 
     <h1>Wiadomości prywatne</h1>
 
+    <div class="toggle-buttons">
+      <button class="toggle-panel-btn" @click="showConversationsList = !showConversationsList">
+        {{ showConversationsList ? '◀ Ukryj konwersacje' : '▶ Pokaż konwersacje' }}
+      </button>
+      <button class="toggle-panel-btn" @click="showUsersList = !showUsersList">
+        {{ showUsersList ? 'Ukryj użytkowników ▶' : '◀ Pokaż użytkowników' }}
+      </button>
+    </div>
+
     <div class="chat-wrapper">
       <!-- Lista konwersacji -->
-      <div class="conversations-list">
+      <div v-if="showConversationsList" class="conversations-list">
         <h3>Konwersacje</h3>
         <input
           type="search"
@@ -258,10 +398,19 @@ onBeforeUnmount(() => {
       <div class="chat-window">
         <div v-if="selectedConversation" class="chat-content">
           <div class="chat-header">
-            <h3>{{ getConversationName(selectedConversation) }}</h3>
+            <h3>{{ getConversationName(selectedConversation) }} <small style="color: #999;">({{ messages.length }} wiadomości)</small></h3>
           </div>
           
-          <div class="messages-container">
+          <div ref="messagesContainer" class="messages-container">
+            <button 
+              v-if="hasMoreMessages" 
+              @click="loadOlderMessages"
+              class="load-more-btn"
+              :disabled="isLoadingMore"
+            >
+              {{ isLoadingMore ? 'Ładowanie...' : '⬆ Załaduj starsze wiadomości' }}
+            </button>
+            
             <div v-for="msg in messages" :key="msg.message_id" class="message">
               <strong>{{ msg.sender_id === currentUser?.id ? 'Ty' : getUserName(msg.sender_id) }}:</strong> {{ msg.message_content }}
             </div>
@@ -283,7 +432,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Lista użytkowników do dodania -->
-      <div class="users-list">
+      <div v-if="showUsersList" class="users-list">
         <h3>Rozpocznij czat</h3>
         <input
           type="search"
@@ -297,6 +446,13 @@ onBeforeUnmount(() => {
             <span>{{ user.user }}</span>
           </li>
         </ul>
+        <button 
+          v-if="hasMoreUsers" 
+          @click="loadMoreUsers"
+          class="load-more-users-btn"
+        >
+          Pokaż więcej użytkowników (↓)
+        </button>
       </div>
     </div>
   </div>
@@ -403,6 +559,8 @@ h1 {
   gap: 1rem;
   flex: 1;
   min-height: 500px;
+  max-height: 600px;
+  overflow: hidden;
 }
 
 .conversations-list,
@@ -528,6 +686,29 @@ h1 {
   max-height: 400px;
 }
 
+.load-more-btn {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #666;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.load-more-btn:hover:not(:disabled) {
+  background: #e0e0e0;
+  border-color: #ccc;
+}
+
+.load-more-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .message {
   padding: 0.5rem;
   margin-bottom: 0.5rem;
@@ -590,6 +771,24 @@ h1 {
   background-color: #8add8a;
 }
 
+.load-more-users-btn {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #666;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.load-more-users-btn:hover {
+  background: #e0e0e0;
+  border-color: #ccc;
+}
+
 .footer {
   margin-top: 3rem;
   border-top: 1px solid #ccc;
@@ -605,5 +804,126 @@ h1 {
   display: flex;
   justify-content: center;
   gap: 1rem;
+}
+
+.toggle-buttons {
+  display: none;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.toggle-panel-btn {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  background: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.toggle-panel-btn:hover {
+  background: #1976D2;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .toggle-buttons {
+    display: flex;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  nav ul {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  nav ul li a {
+    font-size: 0.85rem;
+  }
+
+  .site-name {
+    font-size: 1.4rem;
+  }
+
+  .chat-wrapper {
+    position: relative;
+    min-height: 500px;
+  }
+
+  .conversations-list,
+  .users-list {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 10;
+    width: 260px;
+    max-width: 80%;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+    background: white;
+  }
+
+  .conversations-list {
+    left: 0;
+  }
+
+  .users-list {
+    right: 0;
+  }
+
+  .chat-window {
+    width: 100%;
+    min-height: 500px;
+  }
+
+  .messages-container {
+    max-height: 350px;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .user-avatar {
+    width: 35px;
+    height: 35px;
+    font-size: 1.1rem;
+  }
+
+  .user-name {
+    font-size: 0.95rem;
+  }
+
+  .site-name {
+    font-size: 1.2rem;
+  }
+
+  .conversations-list,
+  .users-list {
+    width: 240px;
+    max-width: 85%;
+  }
+
+  .message-input {
+    flex-direction: column;
+  }
+
+  .message-input input {
+    font-size: 16px;
+  }
+
+  .message-input button {
+    width: 100%;
+    padding: 0.75rem;
+  }
 }
 </style>

@@ -1,8 +1,6 @@
 const db = require('../db');
 
-// -----------------------------------------
-// GET ALL WITH OPTIONAL FILTERS
-// -----------------------------------------
+
 exports.getAll = () => {
     return db.prepare(`
     SELECT id, user_id, group_id, joined_at
@@ -12,9 +10,7 @@ exports.getAll = () => {
 };
 
 
-// -----------------------------------------
-// GET ONE BY ID
-// -----------------------------------------
+
 exports.getOne = (id) => {
     const row = db.prepare(`
     SELECT id, user_id, group_id, joined_at
@@ -28,9 +24,7 @@ exports.getOne = (id) => {
     return row;
 };
 
-// -----------------------------------------
-// CREATE RELATION
-// -----------------------------------------
+
 exports.create = ({ user_id, group_id, joined_at }) => {
     if (user_id == null || group_id == null) {
         throw { status: 400, message: "Brak wymaganych pól: user_id, group_id" };
@@ -57,9 +51,7 @@ exports.create = ({ user_id, group_id, joined_at }) => {
 };
 
 
-// -----------------------------------------
-// PATCH (PARTIAL UPDATE)
-// -----------------------------------------
+
 exports.update = (id, user_id, group_id) => {
     const current = exports.getOne(id);
 
@@ -102,9 +94,7 @@ exports.update = (id, user_id, group_id) => {
 
 
 
-// -----------------------------------------
-// PUT (FULL REPLACE)
-// -----------------------------------------
+
 exports.replace = (id, data) => {
     const current = exports.getOne(Number(id));
 
@@ -115,7 +105,7 @@ exports.replace = (id, data) => {
     const nextUserId = data.user_id;
     const nextGroupId = data.group_id;
 
-    // duplikat pary (z wykluczeniem tego id)
+    // duplikat pary 
     const duplicate = db.prepare(`
     SELECT id FROM user_groups
     WHERE user_id = ? AND group_id = ? AND id <> ?
@@ -148,9 +138,7 @@ exports.replace = (id, data) => {
 };
 
 
-// -----------------------------------------
-// DELETE RELATION
-// -----------------------------------------
+
 exports.remove = (id) => {
     const current = exports.getOne(id);
     db.prepare('DELETE FROM user_groups WHERE id = ?').run(id);

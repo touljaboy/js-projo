@@ -61,27 +61,27 @@ const handleSubmit = async () => {
     <form @submit.prevent="handleSubmit" class="form">
       <label>
         username:
-        <input v-model="username" type="text" placeholder="Value" required />
+        <input v-model="username" type="text" placeholder="np. jan_kowalski" required />
       </label>
 
       <label>
         password:
-        <input v-model="password" type="password" placeholder="Value" required />
+        <input v-model="password" type="password" placeholder="Minimum 6 znaków" required />
       </label>
 
       <label>
         repeat:
-        <input v-model="repeat" type="password" placeholder="Value" required />
+        <input v-model="repeat" type="password" placeholder="Powtórz hasło" required />
       </label>
 
       <label>
         email:
-        <input v-model="email" type="email" placeholder="Value" required />
+        <input v-model="email" type="email" placeholder="twoj.email@example.com" required />
       </label>
 
       <label>
         pesel:
-        <input v-model="pesel" type="text" placeholder="Value" required />
+        <input v-model="pesel" type="text" placeholder="11 cyfr (opcjonalne)" />
       </label>
 
       <label class="captcha-label">

@@ -1,10 +1,9 @@
-// -----------------------------
-// GROUP ROUTER
-// -----------------------------
+
 
 const express = require('express');
 const router = express.Router();
 const groupsController = require('../controllers/groups.controller');
+const { requireAuth } = require('../middleware/auth.middleware');
 
 const { validationResult } = require('express-validator');
 const {
@@ -19,11 +18,12 @@ const validate = (req, res, next) => {
   next();
 };
 
-router.get('/', groupsController.getGroups);
-router.get('/:id', idParamValidation, validate, groupsController.getGroupById);
-router.post('/', createGroupValidation, validate, groupsController.createGroup);
-router.post('/:id/verify', groupsController.verifyGroupPassword);
-router.put('/:id', replaceGroupValidation, validate, groupsController.replaceGroup);
-router.delete('/:id', idParamValidation, validate, groupsController.deleteGroup);
+// Wszystkie endpointy grup wymagają autoryzacji
+router.get('/', requireAuth, groupsController.getGroups);
+router.get('/:id', requireAuth, idParamValidation, validate, groupsController.getGroupById);
+router.post('/', requireAuth, createGroupValidation, validate, groupsController.createGroup);
+router.post('/:id/verify', requireAuth, groupsController.verifyGroupPassword);
+router.put('/:id', requireAuth, replaceGroupValidation, validate, groupsController.replaceGroup);
+router.delete('/:id', requireAuth, idParamValidation, validate, groupsController.deleteGroup);
 
 module.exports = router;

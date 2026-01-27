@@ -207,7 +207,7 @@ const saveEdit = () => {
 
   .edit-mode input,
   .edit-mode select {
-    font-size: 16px; /* Prevents zoom on iOS */
+    font-size: 16px; 
     padding: 10px;
   }
 }

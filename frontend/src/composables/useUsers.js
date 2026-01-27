@@ -1,12 +1,13 @@
 
 import { ref } from 'vue'
 import { useRemoteSearch } from '@/composables/useRemoteSearch'
+import { authFetch } from '@/utils/authFetch'
 
 const API_URL = 'http://localhost:3000/v1/users'
 
 export function useUsers() {
   const fetchUsersApi = async (q, signal) => {
-    const res = await fetch(API_URL, { signal })
+    const res = await authFetch(API_URL, { signal })
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Błąd pobierania użytkowników.')
 
@@ -29,9 +30,8 @@ export function useUsers() {
 
   const addUser = async (payload) => {
     try {
-      const res = await fetch(API_URL, {
+      const res = await authFetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
       const data = await res.json()
@@ -45,7 +45,7 @@ export function useUsers() {
 
   const removeUser = async (id) => {
     try {
-      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' })
+      const res = await authFetch(`${API_URL}/${id}`, { method: 'DELETE' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Błąd usuwania użytkownika.')
       await runSearch(search.value)
@@ -57,9 +57,8 @@ export function useUsers() {
 
   const updateUser = async (id, payload) => {
     try {
-      const res = await fetch(`${API_URL}/${id}`, {
+      const res = await authFetch(`${API_URL}/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
       const data = await res.json()

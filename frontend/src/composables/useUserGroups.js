@@ -1,4 +1,5 @@
 import { ref, onMounted, computed } from 'vue'
+import { authFetch } from '@/utils/authFetch'
 
 const API_URL = 'http://localhost:3000/v1/usergroups'
 
@@ -22,9 +23,10 @@ export function useUserGroups() {
 
   const loadUserGroups = async () => {
     try {
-      const res = await fetch(API_URL)
-      if (!res.ok) throw new Error('Błąd pobierania')
-      userGroups.value = await res.json()
+      const res = await authFetch(API_URL)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Błąd pobierania')
+      userGroups.value = data
     } catch (err) {
       alert(err.message)
     }
@@ -32,12 +34,12 @@ export function useUserGroups() {
 
   const createRel = async (payload) => {
     try {
-      const res = await fetch(API_URL, {
+      const res = await authFetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-      if (!res.ok) throw new Error('Błąd dodawania')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Błąd dodawania')
       await loadUserGroups()
       resetForm()
     } catch (err) {
@@ -49,12 +51,12 @@ export function useUserGroups() {
     if (!editingId.value) return
 
     try {
-      const res = await fetch(`${API_URL}/${editingId.value}`, {
+      const res = await authFetch(`${API_URL}/${editingId.value}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-      if (!res.ok) throw new Error('Błąd aktualizacji')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Błąd aktualizacji')
       await loadUserGroups()
       resetForm()
     } catch (err) {
@@ -66,8 +68,9 @@ export function useUserGroups() {
     if (!confirm('Usunąć?')) return
 
     try {
-      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Błąd usuwania')
+      const res = await authFetch(`${API_URL}/${id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Błąd usuwania')
       await loadUserGroups()
       if (editingId.value === id) resetForm()
     } catch (err) {

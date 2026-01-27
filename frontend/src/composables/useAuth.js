@@ -4,9 +4,20 @@ import { useRouter } from 'vue-router'
 
 const API_URL = 'http://localhost:3000/v1'
 
+// Funkcja pomocnicza do inicjalizacji użytkownika z localStorage
+const initUserFromStorage = () => {
+  const user = localStorage.getItem('currentUser')
+  try {
+    return user ? JSON.parse(user) : null
+  } catch (e) {
+    console.error('Błąd parsowania currentUser z localStorage:', e)
+    return null
+  }
+}
+
 // Stan globalny (współdzielony między wszystkimi komponentami)
-const currentUser = ref(null)
 const authToken = ref(localStorage.getItem('authToken') || null)
+const currentUser = ref(initUserFromStorage())
 
 export function useAuth() {
   const router = useRouter()

@@ -1,10 +1,9 @@
-// -----------------------------
-// MESSAGE ROUTER
-// -----------------------------
+
 
 const express = require('express');
 const router = express.Router();
 const messagesController = require('../controllers/messages.controller');
+const { requireAuth } = require('../middleware/auth.middleware');
 
 const { validationResult } = require('express-validator');
 const {
@@ -19,10 +18,11 @@ const validate = (req, res, next) => {
   next();
 };
 
-router.get('/', messagesController.getMessages);
-router.get('/:id', idParamValidation, validate, messagesController.getMessageById);
-router.post('/', createMessageValidation, validate, messagesController.createMessage);
-router.patch('/:id', patchMessageValidation, validate, messagesController.patchMessage);
-router.delete('/:id', idParamValidation, validate, messagesController.deleteMessage);
+// Wszystkie endpointy wiadomości wymagają autoryzacji
+router.get('/', requireAuth, messagesController.getMessages);
+router.get('/:id', requireAuth, idParamValidation, validate, messagesController.getMessageById);
+router.post('/', requireAuth, createMessageValidation, validate, messagesController.createMessage);
+router.patch('/:id', requireAuth, patchMessageValidation, validate, messagesController.patchMessage);
+router.delete('/:id', requireAuth, idParamValidation, validate, messagesController.deleteMessage);
 
 module.exports = router;
